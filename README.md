@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Life Tracker Suite (LTS) 1.0
 
-## Getting Started
+LTS turns messy real-life input — "work Saturday 2–7, test Tuesday, need groceries, I've been
+exhausted lately" — into typed, reviewable proposals. You approve, edit, or reject each one; only
+approved changes reach your Today view, and every change records where it came from.
 
-First, run the development server:
+**AI interprets and proposes. The user governs.** The rules behind that sentence are in
+[`docs/PRODUCT_CONSTITUTION.md`](docs/PRODUCT_CONSTITUTION.md).
+
+> Status: **M0 — repository skeleton.** The app builds and shows a placeholder page. Sign-in and
+> Today arrive in M2, the capture → approval loop in M3, AI in M4. See the milestone table in
+> [`docs/DEVELOPMENT_PLAYBOOK.md`](docs/DEVELOPMENT_PLAYBOOK.md#milestones).
+
+## Run it locally
+
+Requirements: Node 22+ and pnpm 10 (`corepack enable` provides pnpm).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # nothing is required yet in M0
+pnpm dev                      # http://localhost:4317
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+From M1 you will also need Docker and the [Supabase CLI](https://supabase.com/docs/guides/cli) for
+the local database (`supabase start`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command          | Does                                                            |
+| ---------------- | --------------------------------------------------------------- |
+| `pnpm dev`       | Dev server on port 4317                                         |
+| `pnpm build`     | Production build                                                |
+| `pnpm lint`      | ESLint, zero warnings allowed                                   |
+| `pnpm format`    | Prettier write (`format:check` to verify only)                  |
+| `pnpm typecheck` | Generate route types, then `tsc --noEmit`                       |
+| `pnpm test`      | Vitest once (`test:watch` while working)                        |
+| `pnpm check`     | lint + format check + typecheck + tests — run before every push |
 
-## Learn More
+CI (`.github/workflows/ci.yml`) runs the same checks plus `pnpm build` on every PR and on `main`.
 
-To learn more about Next.js, take a look at the following resources:
+## How the repository is organized
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+.github/            CI workflow and issue templates (bug, backlog idea)
+db/migrations/      SQL migrations generated from the Drizzle schema (from M1)
+docs/               Constitution, playbook, architecture, ADRs, interim backlog
+src/app/            Next.js routes and layouts
+src/components/ui/  shadcn/ui primitives
+src/lib/            Small shared utilities
+LEGACY.md           Provenance of the old v2.9.7 static build (reference only, not in this repo)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Planned folders (`src/contracts`, `src/domain`, `src/ai`, `src/server`) are created by the milestone
+that first needs them; their responsibilities and import rules are in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#source-layout-and-import-boundaries).
 
-## Deploy on Vercel
+## Docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Product constitution](docs/PRODUCT_CONSTITUTION.md) — the rules that settle arguments
+- [Architecture](docs/ARCHITECTURE.md) — boundaries, data model, AI harness, approval flow
+- [Development playbook](docs/DEVELOPMENT_PLAYBOOK.md) — milestones, workflow, tests, migrations, releases
+- [Architecture decision records](docs/adr/README.md)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Where work is tracked
+
+- **Current milestone:** the table in the playbook; one feature branch + PR per meaningful change.
+- **Backlog:** GitHub Issues labeled `backlog` once the GitHub repository exists; until then,
+  [`docs/BACKLOG.md`](docs/BACKLOG.md). Ideas wait there unless they unblock the current milestone.
+
+## Environment variables
+
+All variables are documented in [`.env.example`](.env.example) with the milestone that needs them.
+Secrets live only in `.env.local` and in the Vercel/Supabase dashboards — never in git.
+
+## Deployment
+
+Planned for M5: Vercel (app, previews per PR) + Supabase (Postgres + Auth). Steps and post-deploy
+checks are in the playbook's "Release and deployment verification" section.
+
+## License
+
+All rights reserved for now (see [`LICENSE`](LICENSE)). LTS holds personal-life data models and
+is a personal project; an open-source license can be chosen later without affecting anything else
+in the repo.
