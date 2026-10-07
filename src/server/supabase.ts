@@ -13,7 +13,9 @@ export interface SupabaseConfig {
 /** Null when Supabase Auth is not configured; callers show a "not set up" state instead of crashing. */
 export function getSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  // Older Supabase integrations sync only the legacy anon key; it grants the same (auth-only) access.
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return url && publishableKey ? { url, publishableKey } : null;
 }
 
