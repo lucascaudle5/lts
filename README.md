@@ -7,8 +7,9 @@ approved changes reach your Today view, and every change records where it came f
 **AI interprets and proposes. The user governs.** The rules behind that sentence are in
 [`docs/PRODUCT_CONSTITUTION.md`](docs/PRODUCT_CONSTITUTION.md).
 
-> Status: **M0 — repository skeleton.** The app builds and shows a placeholder page. Sign-in and
-> Today arrive in M2, the capture → approval loop in M3, AI in M4. See the milestone table in
+> Status: **M1 — contracts and database.** Typed contracts, pure domain rules, the Postgres schema,
+> migrations, and a dev seed exist; the app still shows a placeholder page. Sign-in and Today arrive
+> in M2, the capture → approval loop in M3, AI in M4. See the milestone table in
 > [`docs/DEVELOPMENT_PLAYBOOK.md`](docs/DEVELOPMENT_PLAYBOOK.md#milestones).
 
 ## Run it locally
@@ -17,42 +18,72 @@ Requirements: Node 22+ and pnpm 10 (`corepack enable` provides pnpm).
 
 ```bash
 pnpm install
-cp .env.example .env.local   # nothing is required yet in M0
+cp .env.example .env.local   # the defaults point at the local Supabase stack
 pnpm dev                      # http://localhost:4317
 ```
 
-From M1 you will also need Docker and the [Supabase CLI](https://supabase.com/docs/guides/cli) for
-the local database (`supabase start`).
+### Database
+
+The database needs Docker and the [Supabase CLI](https://supabase.com/docs/guides/cli) (`supabase`
+on your PATH, or prefix the commands with `npx`). No hosted Supabase project or credentials are
+needed for development or tests.
+
+```bash
+supabase start     # local Postgres on 127.0.0.1:54322 (+ Auth, Studio on :54323)
+pnpm db:migrate    # apply db/migrations/ (Drizzle) to POSTGRES_URL_NON_POOLING
+pnpm db:seed       # replace the fictional user "Sam" with a fresh week of data
+pnpm test:db       # DB integration tests (create and drop their own database)
+supabase stop      # when you're done
+```
+
+- The seed refuses to run unless `POSTGRES_URL_NON_POOLING` points at `localhost`/`127.0.0.1`. It is
+  idempotent: re-running it replaces Sam's rows.
+- Without the Supabase CLI, any local Postgres 17 works for migrations, seed, and tests, e.g.
+  `docker run -d -p 54322:5432 -e POSTGRES_PASSWORD=postgres postgres:17`. CI does exactly this
+  with a service container.
+- Changing the schema: edit `src/server/db/schema.ts`, run `pnpm db:generate`, read the new SQL in
+  `db/migrations/`, and commit both. CI fails if the schema and migrations disagree.
 
 ## Commands
 
-| Command          | Does                                                            |
-| ---------------- | --------------------------------------------------------------- |
-| `pnpm dev`       | Dev server on port 4317                                         |
-| `pnpm build`     | Production build                                                |
-| `pnpm lint`      | ESLint, zero warnings allowed                                   |
-| `pnpm format`    | Prettier write (`format:check` to verify only)                  |
-| `pnpm typecheck` | Generate route types, then `tsc --noEmit`                       |
-| `pnpm test`      | Vitest once (`test:watch` while working)                        |
-| `pnpm check`     | lint + format check + typecheck + tests — run before every push |
+| Command            | Does                                                             |
+| ------------------ | ---------------------------------------------------------------- |
+| `pnpm dev`         | Dev server on port 4317                                          |
+| `pnpm build`       | Production build                                                 |
+| `pnpm lint`        | ESLint, zero warnings allowed                                    |
+| `pnpm format`      | Prettier write (`format:check` to verify only)                   |
+| `pnpm typecheck`   | Generate route types, then `tsc --noEmit`                        |
+| `pnpm test`        | Unit tests once (`test:watch` while working); no database needed |
+| `pnpm check`       | lint + format check + typecheck + tests — run before every push  |
+| `pnpm test:db`     | DB integration tests (`*.db.test.ts`) against local Postgres     |
+| `pnpm db:generate` | Generate a migration from `src/server/db/schema.ts`              |
+| `pnpm db:migrate`  | Apply migrations to `POSTGRES_URL_NON_POOLING`                   |
+| `pnpm db:seed`     | Seed the fictional user "Sam" (local databases only)             |
 
-CI (`.github/workflows/ci.yml`) runs the same checks plus `pnpm build` on every PR and on `main`.
+CI (`.github/workflows/ci.yml`) runs two jobs on every PR and on `main`: `check` (the `pnpm check`
+steps plus `pnpm build`) and `db` (a Postgres 17 service container: schema/migration drift check,
+`db:migrate`, `db:seed` twice, `test:db`).
 
 ## How the repository is organized
 
 ```
 .github/            CI workflow and issue templates (bug, backlog idea)
-db/migrations/      SQL migrations generated from the Drizzle schema (from M1)
+db/migrations/      SQL migrations generated from the Drizzle schema
 docs/               Constitution, playbook, architecture, ADRs, interim backlog
+supabase/           Local Supabase stack config (supabase start)
 src/app/            Next.js routes and layouts
 src/components/ui/  shadcn/ui primitives
+src/contracts/      zod schemas: domain commands, proposals, tool I/O
+src/domain/         Pure rules: dates/times, slots, validation, conflicts, safety
+src/server/db/      Drizzle schema, DB client, dev seed
 src/lib/            Small shared utilities
 LEGACY.md           Provenance of the old v2.9.7 static build (reference only, not in this repo)
 ```
 
-Planned folders (`src/contracts`, `src/domain`, `src/ai`, `src/server`) are created by the milestone
-that first needs them; their responsibilities and import rules are in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#source-layout-and-import-boundaries).
+Later folders (`src/ai`, `src/server/repositories`, `src/server/mutations`, …) are created by the
+milestone that first needs them. Responsibilities and import rules are in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#source-layout-and-import-boundaries); ESLint enforces
+them (`eslint.config.mjs`, tested in `src/import-boundaries.test.ts`).
 
 ## Docs
 

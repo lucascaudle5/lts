@@ -70,8 +70,9 @@ merged). Commit messages: imperative, specific (`Add mutation layer with change_
 - Every repository function and AI tool gets a cross-user isolation test (user B sees and changes
   nothing of user A's). These are the main tenancy control, because the server connection bypasses
   RLS; they lower the risk, they don't prove its absence.
-- DB integration tests (`*.db.test.ts`, from M1) run against a disposable Postgres; each test runs in
-  a transaction that is rolled back.
+- DB integration tests (`*.db.test.ts`, from M1, `pnpm test:db`) run against a disposable Postgres:
+  each test file migrates its own fresh database and drops it afterwards, and tests that write
+  outside the seed run in a transaction that is rolled back. `pnpm test` stays database-free.
 - The slice e2e (from M5) must stay green; it is the definition of "LTS works".
 
 ## Schema and migrations
@@ -89,8 +90,9 @@ policies.
 
 `pnpm db:seed` (M1) creates a fictional student, "Sam", with a week of blocks, tasks, and two
 observations — never real personal data (the legacy defaults embedded real-looking body metrics;
-that stops here). Seeds go through `runMutations`, are idempotent, and refuse to run when
-`POSTGRES_URL_NON_POOLING` is not local.
+that stops here). Seeds are idempotent and refuse to run when `POSTGRES_URL_NON_POOLING` is not
+local. Once `runMutations` exists (M3), seeds go through it; the M1 seed writes rows directly
+because the mutation layer does not exist yet.
 Golden AI fixtures double as seed-able captures.
 
 ## AI structured output

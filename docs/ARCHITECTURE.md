@@ -59,7 +59,8 @@ Directories appear when the milestone that needs them starts (see `README.md` fo
 
 `domain` and `contracts` stay pure (no I/O) so the compiler can be unit-tested exhaustively. ESLint
 `no-restricted-imports` enforces the table from M1 onward, including "only `src/server/mutations/**`
-may import repository write helpers".
+may import repository write helpers". Write helpers live in files named `*.writes.ts` (or
+`writes.ts`) under `src/server/repositories/`; that name is how the rule recognizes them.
 
 ## Data ownership and tenancy
 
