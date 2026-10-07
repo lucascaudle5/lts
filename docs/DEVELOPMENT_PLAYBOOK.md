@@ -147,12 +147,14 @@ needed from M2). The full student-friendly walkthrough is in the project's hosti
    function region (Settings → Functions; default `iad1`, Washington, D.C.).
 2. **Supabase via Vercel Marketplace:** in the Vercel project → Storage → create a Supabase database
    (or run `vc i supabase` from the repo with the Vercel CLI), pick the AWS region closest to the function region
-   (`us-east-1` for `iad1`), connect it to the project. This syncs `POSTGRES_URL`,
+   (`us-east-1` for `iad1`), connect it to Production and Development only (previews would otherwise
+   share real data). This syncs `POSTGRES_URL`,
    `POSTGRES_URL_NON_POOLING`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and
    more. (Alternative: create the project at supabase.com and copy the same values into Vercel by
    hand.)
 3. **Auth URLs:** Supabase → Authentication → URL Configuration → Site URL = the production URL;
-   Redirect URLs += `http://localhost:4317/**` and the Vercel preview pattern.
+   Redirect URLs += `http://localhost:4317/**` (plus the Vercel preview pattern only if previews get
+   their own database).
 4. **Env vars on Vercel:** add `NEXT_PUBLIC_SITE_URL`, `LTS_AI_PROVIDER=gateway`, `LTS_AI_MODEL`,
    `LTS_AI_TRACE_MODE=metadata`. Do **not** add `AI_GATEWAY_API_KEY`; deployments use OIDC.
 5. **Locally:** keep the local Supabase stack values in `.env.local`; create an AI Gateway API key
