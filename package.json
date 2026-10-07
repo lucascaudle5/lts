@@ -16,7 +16,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx --conditions=react-server src/server/db/seed.ts",
+    "test:db": "vitest run --config vitest.db.config.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
