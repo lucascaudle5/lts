@@ -5,7 +5,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createDb, type Db } from "./client";
-import { loadLocalEnv } from "./env";
+import { loadLocalEnv } from "./local-env";
 import { isLocalDatabaseUrl, SAM_USER_ID, seedSam } from "./seed";
 
 const V1_TABLES = [

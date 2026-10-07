@@ -6,7 +6,7 @@ import type { HhMm, IsoDate } from "@/contracts/common";
 import { addDaysIso, localDateTimeToInstant, todayInTimezone, weekdayOf } from "@/domain/dates";
 
 import { createDb, type Db } from "./client";
-import { loadLocalEnv, requireEnv } from "./env";
+import { loadLocalEnv, requireScriptEnv } from "./local-env";
 import { observations, profiles, scheduleBlocks, tasks } from "./schema";
 
 /** Fictional dev user. Never seed real personal data. */
@@ -114,8 +114,8 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
 }
 
 async function main() {
-  loadLocalEnv();
-  const url = requireEnv("POSTGRES_URL_NON_POOLING");
+  const loaded = loadLocalEnv();
+  const url = requireScriptEnv("POSTGRES_URL_NON_POOLING", loaded);
   if (!isLocalDatabaseUrl(url)) {
     throw new Error(
       "Refusing to seed: POSTGRES_URL_NON_POOLING does not point at a local database " +
