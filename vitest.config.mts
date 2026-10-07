@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
-export const sharedResolve = {
+const sharedResolve = {
   alias: {
     "@": fileURLToPath(new URL("./src", import.meta.url)),
     // `server-only` throws outside React Server Components; tests are server code.

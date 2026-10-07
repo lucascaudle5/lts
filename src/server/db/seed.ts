@@ -68,15 +68,19 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
     block(6, "Meal prep", "meal", "17:00", "18:00", false),
   ];
 
-  const taskRows: (typeof tasks.$inferInsert)[] = [
+  const taskSeeds: Omit<typeof tasks.$inferInsert, "userId" | "origin">[] = [
     { title: "Stats problem set 4", kind: "assignment", dueOn: day(4) },
     { title: "Biology midterm", kind: "exam", dueOn: day(8) },
     { title: "Groceries", kind: "errand" },
     { title: "Laundry", kind: "chore", status: "done" },
     { title: "Email advisor about spring classes", kind: "other", status: "parked" },
-  ].map((t) => ({ ...t, userId: SAM_USER_ID, origin: "manual" as const }));
+  ];
+  const taskRows = taskSeeds.map((t) => ({ ...t, userId: SAM_USER_ID, origin: "manual" as const }));
 
-  const observationRows: (typeof observations.$inferInsert)[] = [
+  const observationSeeds: Pick<
+    typeof observations.$inferInsert,
+    "category" | "valueText" | "valueNum" | "occurredOn"
+  >[] = [
     {
       category: "sleep",
       valueText: "slept about 6 hours",
@@ -84,7 +88,8 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
       occurredOn: addDaysIso(referenceDate, -1),
     },
     { category: "energy", valueText: "pretty tired after lab", occurredOn: referenceDate },
-  ].map((o) => ({
+  ];
+  const observationRows = observationSeeds.map((o) => ({
     ...o,
     userId: SAM_USER_ID,
     source: "manual_entry" as const,

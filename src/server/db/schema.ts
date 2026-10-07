@@ -37,18 +37,26 @@ import { ProposalStatus, ProvenanceSource } from "@/contracts/proposals";
  * `user_id` is the Supabase auth user id; there is deliberately no FK into the `auth` schema.
  */
 
-export const blockKind = pgEnum("block_kind", BlockKind.options);
-export const taskKind = pgEnum("task_kind", TaskKind.options);
-export const taskStatus = pgEnum("task_status", TaskStatus.options);
-export const observationCategory = pgEnum("observation_category", ObservationCategory.options);
-export const observationSource = pgEnum("observation_source", ObservationSource.options);
-export const sensitivity = pgEnum("sensitivity", Sensitivity.options);
-export const changeOrigin = pgEnum("change_origin", ChangeOrigin.options);
-export const actor = pgEnum("actor", Actor.options);
-export const confidence = pgEnum("confidence", Confidence.options);
-export const commandKind = pgEnum("command_kind", CommandKind.options);
-export const proposalStatus = pgEnum("proposal_status", ProposalStatus.options);
-export const provenanceSource = pgEnum("provenance_source", ProvenanceSource.options);
+/** zod enums are never empty; pgEnum needs that as a tuple type. */
+function values<T extends string>(options: readonly T[]): [T, ...T[]] {
+  return options as [T, ...T[]];
+}
+
+export const blockKind = pgEnum("block_kind", values(BlockKind.options));
+export const taskKind = pgEnum("task_kind", values(TaskKind.options));
+export const taskStatus = pgEnum("task_status", values(TaskStatus.options));
+export const observationCategory = pgEnum(
+  "observation_category",
+  values(ObservationCategory.options),
+);
+export const observationSource = pgEnum("observation_source", values(ObservationSource.options));
+export const sensitivity = pgEnum("sensitivity", values(Sensitivity.options));
+export const changeOrigin = pgEnum("change_origin", values(ChangeOrigin.options));
+export const actor = pgEnum("actor", values(Actor.options));
+export const confidence = pgEnum("confidence", values(Confidence.options));
+export const commandKind = pgEnum("command_kind", values(CommandKind.options));
+export const proposalStatus = pgEnum("proposal_status", values(ProposalStatus.options));
+export const provenanceSource = pgEnum("provenance_source", values(ProvenanceSource.options));
 export const harnessRunStatus = pgEnum("harness_run_status", [
   "succeeded",
   "invalid_output",
