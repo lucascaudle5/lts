@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createDb, type Db } from "./client";
 import { loadLocalEnv } from "./local-env";
-import { isLocalDatabaseUrl, SAM_USER_ID, seedSam } from "./seed";
+import { ensureSamAuthUser, isLocalDatabaseUrl, SAM_USER_ID, seedSam } from "./seed";
 
 const V1_TABLES = [
   "captures",
@@ -134,6 +134,10 @@ describe("seed", () => {
       where user_id = ${SAM_USER_ID} and kind = 'work'`;
     expect(new Date(work.starts_at).toISOString()).toBe("2026-10-10T19:00:00.000Z");
     expect(new Date(work.ends_at).toISOString()).toBe("2026-10-11T00:00:00.000Z");
+  });
+
+  it("skips the Auth user on plain Postgres, which has no auth schema", async () => {
+    await expect(ensureSamAuthUser(db)).resolves.toBe(false);
   });
 
   it("records only numbers the user gave", async () => {
