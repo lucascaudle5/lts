@@ -25,3 +25,43 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  db:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Same major version as the local Supabase stack (supabase/config.toml).
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      POSTGRES_URL_NON_POOLING: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrations match the schema
+        run: |
+          pnpm db:generate
+          test -z "$(git status --porcelain db/migrations)" || {
+            echo "src/server/db/schema.ts changed without a migration. Run pnpm db:generate and commit it."
+            git status --porcelain db/migrations
+            exit 1
+          }
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - name: Seed is idempotent
+        run: pnpm db:seed
+      - run: pnpm test:db
