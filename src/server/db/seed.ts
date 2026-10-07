@@ -6,6 +6,7 @@ import type { HhMm, IsoDate } from "@/contracts/common";
 import { addDaysIso, localDateTimeToInstant, todayInTimezone, weekdayOf } from "@/domain/dates";
 
 import { createDb, type Db } from "./client";
+import { isLocalDatabaseUrl } from "./connection";
 import { loadLocalEnv, requireScriptEnv } from "./local-env";
 import { observations, profiles, scheduleBlocks, tasks } from "./schema";
 
@@ -15,15 +16,7 @@ export const SAM_TIMEZONE = "America/Chicago";
 /** Sign in as Sam locally; the local Supabase stack catches the email (Mailpit, port 54324). */
 export const SAM_EMAIL = "sam@example.com";
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
-
-export function isLocalDatabaseUrl(url: string): boolean {
-  try {
-    return LOCAL_HOSTS.has(new URL(url).hostname);
-  } catch {
-    return false;
-  }
-}
+export { isLocalDatabaseUrl };
 
 export interface SeedCounts {
   blocks: number;

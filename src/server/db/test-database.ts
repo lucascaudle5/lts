@@ -5,7 +5,7 @@ import postgres from "postgres";
 
 import { createDb, type Db } from "./client";
 import { loadLocalEnv } from "./local-env";
-import { isLocalDatabaseUrl } from "./seed";
+import { isLocalDatabaseUrl } from "./connection";
 
 export interface TestDatabase {
   db: Db;

@@ -1,5 +1,6 @@
 import { defineConfig } from "drizzle-kit";
 
+import { cleanDatabaseUrl } from "./src/server/db/connection";
 import { loadLocalEnv, requireScriptEnv } from "./src/server/db/local-env";
 
 const loaded = loadLocalEnv();
@@ -13,7 +14,7 @@ export default defineConfig({
   out: "./db/migrations",
   dbCredentials: {
     url: needsDatabase
-      ? requireScriptEnv("POSTGRES_URL_NON_POOLING", loaded)
+      ? cleanDatabaseUrl(requireScriptEnv("POSTGRES_URL_NON_POOLING", loaded))
       : (process.env.POSTGRES_URL_NON_POOLING ?? ""),
   },
   migrations: { table: "__drizzle_migrations", schema: "drizzle" },
