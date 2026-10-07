@@ -3,6 +3,7 @@ import "server-only";
 import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 export interface SupabaseConfig {
   url: string;
@@ -26,7 +27,9 @@ export function createAuthClient(config: SupabaseConfig, cookieMethods: CookieMe
 
 /** For Server Components, Server Actions, and Route Handlers. One client per request. */
 export async function createRequestAuthClient(): Promise<SupabaseClient | null> {
-  // Read the request first so callers are never prerendered, even when env vars are missing.
+  // Session checks compare token expiry with the clock, so they must run at request time, never
+  // during prerendering (and never be skipped into a static result when env vars are missing).
+  await connection();
   const store = await cookies();
   const config = getSupabaseConfig();
   if (!config) return null;

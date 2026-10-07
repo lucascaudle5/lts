@@ -1,7 +1,7 @@
 "use client";
 
 import { MailCheck } from "lucide-react";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useState, useSyncExternalStore } from "react";
 
 import type { SignInNotice, SignInState } from "@/contracts/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -28,6 +28,16 @@ const NOTICES: Record<SignInNotice, { title: string; body: string; tone: "defaul
   signed_out: { title: "You're signed out", body: "See you soon.", tone: "default" },
 };
 
+function subscribeToHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+/** Supabase reports some failed links in the URL fragment, which the server never sees. */
+function readHashErrorCode(): string | null {
+  return new URLSearchParams(window.location.hash.slice(1)).get("error_code");
+}
+
 export interface SignInFormProps {
   action: (state: SignInState, formData: FormData) => Promise<SignInState>;
   next?: string;
@@ -38,28 +48,29 @@ export interface SignInFormProps {
 export function SignInForm({ action, next, notice, configured }: SignInFormProps) {
   const [state, formAction, pending] = useActionState(action, { status: "idle" });
   const [editing, setEditing] = useState(false);
-  const timezoneRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (timezoneRef.current) {
-      timezoneRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
-  }, []);
+  const [emailInput, setEmailInput] = useState("");
+  const hashErrorCode = useSyncExternalStore(subscribeToHash, readHashErrorCode, () => null);
+  const hashNotice: SignInNotice | undefined = hashErrorCode
+    ? hashErrorCode === "otp_expired"
+      ? "link_expired"
+      : "link_invalid"
+    : undefined;
 
   const sent = state.status === "sent" && !editing;
-  const email = state.status === "idle" ? "" : state.email;
-  const banner = notice && state.status === "idle" ? NOTICES[notice] : null;
+  const sentTo = state.status === "sent" ? state.email : "";
+  const shownNotice = notice === "not_configured" ? notice : (hashNotice ?? notice);
+  const banner = shownNotice && state.status === "idle" ? NOTICES[shownNotice] : null;
 
   return (
     <form
       action={(formData) => {
+        formData.set("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
         setEditing(false);
         formAction(formData);
       }}
       className="space-y-5"
       noValidate
     >
-      <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="" />
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       {banner ? (
@@ -77,12 +88,12 @@ export function SignInForm({ action, next, notice, configured }: SignInFormProps
               <p className="font-medium">Check your email</p>
               <p className="text-muted-foreground">
                 We sent a sign-in link to{" "}
-                <span className="font-medium text-foreground">{email}</span>. Open it on this
+                <span className="font-medium text-foreground">{sentTo}</span>. Open it on this
                 device, in this browser.
               </p>
             </div>
           </div>
-          <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="email" value={sentTo} />
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="submit" variant="outline" disabled={pending} className="h-10 sm:flex-1">
               {pending ? "Sending…" : "Send another link"}
@@ -111,7 +122,8 @@ export function SignInForm({ action, next, notice, configured }: SignInFormProps
               spellCheck={false}
               required
               placeholder="you@example.com"
-              defaultValue={email}
+              value={emailInput}
+              onChange={(event) => setEmailInput(event.target.value)}
               disabled={!configured}
               aria-invalid={state.status === "invalid" || undefined}
               aria-describedby={state.status === "invalid" ? "email-error" : undefined}
