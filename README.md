@@ -74,8 +74,13 @@ Secrets live only in `.env.local` and in the Vercel/Supabase dashboards — neve
 
 ## Deployment
 
-Planned for M5: Vercel (app, previews per PR) + Supabase (Postgres + Auth). Steps and post-deploy
-checks are in the playbook's "Release and deployment verification" section.
+Vercel hosts the app (production from `main`, previews per PR). Supabase is created through the
+Vercel Marketplace, so the database env vars sync automatically, in the AWS region closest to the
+Vercel function region. AI calls go through the Vercel AI Gateway: an API key locally, OIDC when
+deployed. Use one production URL and one account on phone and laptop, and the data stays in sync.
+The step-by-step version is the playbook's
+["Hosting setup"](docs/DEVELOPMENT_PLAYBOOK.md#hosting-setup-short-version) section; release checks are
+in "Release and deployment verification".
 
 ## License
 

@@ -6,7 +6,7 @@ Date: 2026-10-07
 ## Context
 
 The brief suggested React + TypeScript + Vite. A Vite SPA is only a frontend: the AI harness,
-model keys, and approval transaction still need a server, which means a second deployable (the
+model keys, and mutation transaction still need a server, which means a second deployable (the
 legacy build had exactly this split: static site + Worker, with CORS `*` and an unauthenticated
 endpoint). For a solo student, every extra deployable is extra config, auth, and drift.
 

@@ -11,7 +11,8 @@ decides, or does next. AI interprets and proposes. The user governs.
 1. **A tracker must improve understanding, decision, or action.** Every tracked field must feed a
    screen, a review, or a proposal. If nothing reads it, stop collecting it.
 2. **AI proposes; the user decides.** Models produce proposals, explanations, and questions. They
-   never write domain state. Writes happen only in the approval transaction, triggered by the user.
+   never write domain state. All consequential domain mutations go through the same audited
+   mutation layer; AI-generated mutations additionally require the user's approval of the proposal.
 3. **Observation is not inference.** What the user said, logged, or a device measured is an
    _observation_. What anyone (AI or rule) concluded from it is an _inference_. They live in
    different tables, render differently, and an inference never becomes an observation without the
@@ -27,9 +28,10 @@ decides, or does next. AI interprets and proposes. The user governs.
 8. **Reality beats aesthetics.** A plain screen that matches what happened beats a beautiful one that
    implies precision LTS does not have. No pseudo-precise life scores.
 9. **No silent mutation of consequential state.** Schedule, commitments, health-adjacent data, and
-   settings change only through an approved proposal or a direct user edit, and every change is in
-   the change log with before/after. Narrow automations are allowed only when the user deliberately
-   configured that exact automation.
+   settings change only through an approved proposal or a direct user edit. Both paths run through
+   the same mutation layer, so every change is validated, authorized, atomic, and in the change log
+   with before/after and its origin. Narrow automations are allowed only when the user deliberately
+   configured that exact automation, and they use the same layer.
 10. **Ship before redesigning.** LTS 1.0 gets finished even if we become smarter while building it.
 11. **New ideas go to the backlog** unless they solve a demonstrated blocker for the current milestone.
 
@@ -49,8 +51,10 @@ LTS **must not**:
 - encourage obsessive self-surveillance (no prompts to log more than the user chose);
 - produce shame-based copy (Article 4).
 
-If input suggests risk of harm, LTS stops proposing and shows a short, fixed message pointing to
-human help. That path is deterministic, not model-generated.
+**Risk-language stop.** If a capture contains explicit harm language from a small, fixed phrase
+list, LTS makes no AI call and no proposals, and shows a fixed message pointing to human help. This
+is deliberately narrow and conservative. It is **not** a crisis classifier: it does not score,
+infer, or monitor risk, and it will miss indirect language. LTS must never claim otherwise.
 
 Access to sensitive categories by AI tools is opt-in per category and logged.
 
