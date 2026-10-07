@@ -60,9 +60,9 @@ supabase stop      # when you're done
 | `pnpm db:migrate`  | Apply migrations to `POSTGRES_URL_NON_POOLING`                   |
 | `pnpm db:seed`     | Seed the fictional user "Sam" (local databases only)             |
 
-CI (`.github/workflows/ci.yml`) runs two jobs on every PR and on `main`: `check` (the `pnpm check`
-steps plus `pnpm build`) and `db` (a Postgres 17 service container: schema/migration drift check,
-`db:migrate`, `db:seed` twice, `test:db`).
+CI (`.github/workflows/ci.yml`) runs the `pnpm check` steps plus `pnpm build` on every PR and on
+`main`. DB integration tests (`pnpm test:db`) currently run locally only; CI gets a Postgres service
+container job for them next.
 
 ## How the repository is organized
 
