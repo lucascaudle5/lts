@@ -6,7 +6,7 @@ Last updated 2026-10-07.
 
 | Milestone                                           | State                                                                                                        |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| M0: repo skeleton                                   | Merged, tagged `v0.0.0`                                                                                      |
+| M0: repo skeleton                                   | Merged (not tagged yet)                                                                                      |
 | M1: contracts and database                          | Merged ([PR #2](https://github.com/lucascaudle5/lts/pull/2))                                                 |
 | M2: sign-in, app shell, read-only Today             | In [PR #3](https://github.com/lucascaudle5/lts/pull/3) (branch `m2-auth-today`), waiting on the deploy check |
 | M3: capture → parser → proposals → approval → Today | Next                                                                                                         |
