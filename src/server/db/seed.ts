@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import type { HhMm, IsoDate } from "@/contracts/common";
 import { addDaysIso, localDateTimeToInstant, todayInTimezone, weekdayOf } from "@/domain/dates";
@@ -12,6 +12,8 @@ import { observations, profiles, scheduleBlocks, tasks } from "./schema";
 /** Fictional dev user. Never seed real personal data. */
 export const SAM_USER_ID = "5a5a5a5a-0000-4000-8000-000000000001";
 export const SAM_TIMEZONE = "America/Chicago";
+/** Sign in as Sam locally; the local Supabase stack catches the email (Mailpit, port 54324). */
+export const SAM_EMAIL = "sam@example.com";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -113,6 +115,40 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
   };
 }
 
+/**
+ * On the local Supabase stack, makes Sam a confirmed Auth user with the seed's fixed id so a
+ * magic-link sign-in as SAM_EMAIL lands on the seeded week. Plain Postgres (CI) has no `auth`
+ * schema; then this is a no-op and returns false. Token columns must be '' rather than NULL for
+ * Supabase Auth to load the user.
+ */
+export async function ensureSamAuthUser(db: Db): Promise<boolean> {
+  const [{ exists }] = await db.execute<{ exists: boolean }>(
+    sql`select to_regclass('auth.users') is not null and to_regclass('auth.identities') is not null as exists`,
+  );
+  if (!exists) return false;
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`
+      insert into auth.users (
+        instance_id, id, aud, role, email, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+        confirmation_token, recovery_token, email_change_token_new, email_change
+      ) values (
+        '00000000-0000-0000-0000-000000000000', ${SAM_USER_ID}, 'authenticated', 'authenticated',
+        ${SAM_EMAIL}, now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+        '', '', '', ''
+      ) on conflict (id) do nothing`);
+    await tx.execute(sql`
+      insert into auth.identities (
+        provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+      ) values (
+        ${SAM_USER_ID}, ${SAM_USER_ID},
+        ${JSON.stringify({ sub: SAM_USER_ID, email: SAM_EMAIL, email_verified: true })}::jsonb,
+        'email', now(), now(), now()
+      ) on conflict (provider_id, provider) do nothing`);
+  });
+  return true;
+}
+
 async function main() {
   const loaded = loadLocalEnv();
   const url = requireScriptEnv("POSTGRES_URL_NON_POOLING", loaded);
@@ -126,9 +162,15 @@ async function main() {
   try {
     const referenceDate = todayInTimezone(new Date(), SAM_TIMEZONE);
     const counts = await seedSam(db, referenceDate);
+    const canSignIn = await ensureSamAuthUser(db);
     console.log(
       `Seeded Sam (week of ${referenceDate}): ${counts.blocks} blocks, ${counts.tasks} tasks, ` +
         `${counts.observations} observations.`,
+    );
+    console.log(
+      canSignIn
+        ? `Sign in at /sign-in as ${SAM_EMAIL}; the link arrives in Mailpit (http://127.0.0.1:54324).`
+        : "No Supabase Auth schema here, so Sam has no login (fine for CI and plain Postgres).",
     );
   } finally {
     await db.$client.end();
