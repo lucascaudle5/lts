@@ -41,6 +41,7 @@ describe("buildTodayView", () => {
     const view = build({});
     expect(view.date).toBe("2026-10-07");
     expect(view.dateLabel).toBe("Wednesday, October 7");
+    expect(view.localHour).toBe(10);
     expect(view.timezone).toBe(TZ);
   });
 
@@ -149,7 +150,7 @@ describe("buildTodayView", () => {
     expect(
       view.openTasks.map((t) => [t.title, t.dueLabel, t.dueToday, t.pastDue, t.taskKind]),
     ).toEqual([
-      ["Was due", "Overdue · Due Mon, Oct 5", false, true, "assignment"],
+      ["Was due", "Waiting since Mon, Oct 5", false, true, "assignment"],
       ["Today", "Due today", true, false, "chore"],
       ["Exam", "Due Tue, Oct 13", false, false, "exam"],
       ["Groceries", null, false, false, "errand"],

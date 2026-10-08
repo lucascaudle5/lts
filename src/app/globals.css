@@ -400,3 +400,51 @@
       border-color 200ms !important;
   }
 }
+
+/* Today: the sky tint follows the hour (set by data-daypart) and the load of the day. */
+.today-sky {
+  position: relative;
+  isolation: isolate;
+}
+.today-sky::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -1rem auto;
+  height: 24rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 100% at var(--sky-x, 18%) 0,
+    color-mix(in srgb, var(--sky, var(--gold-soft)) var(--sky-mix, 55%), transparent),
+    transparent 72%
+  );
+}
+[data-daypart="morning"] {
+  --sky-x: 18%;
+  --sky-mix: 55%;
+}
+[data-daypart="afternoon"] {
+  --sky-x: 72%;
+  --sky-mix: 80%;
+}
+[data-daypart="evening"] {
+  --sky: var(--blue-soft);
+  --sky-x: 86%;
+  --sky-mix: 70%;
+}
+[data-theme="dark"] [data-daypart] {
+  --sky: var(--gold-soft);
+  --sky-mix: 40%;
+}
+[data-load="heavy"] {
+  --room: var(--blue);
+  --room-soft: var(--blue-soft);
+  --room-ink: var(--blue);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+    transition: transform 80ms;
+  }
+}

@@ -49,7 +49,7 @@ export const TodayTask = z.object({
   /** e.g. "Due today", "Due Tue, Oct 13", or null when there is no due date. */
   dueLabel: z.string().nullable(),
   dueToday: z.boolean(),
-  /** The due date has passed; shown plainly, never as a warning (Article 4). */
+  /** The due date has passed; shown as "Waiting since", never as a warning (Article 4). */
   pastDue: z.boolean(),
   provenance: ProvenanceLink,
 });
@@ -70,6 +70,8 @@ export const TodayView = z.object({
   timezone: Timezone,
   /** e.g. "Wednesday, October 7". */
   dateLabel: z.string(),
+  /** Hour of day (0-23) in `timezone` when the view was built; picks the greeting. */
+  localHour: z.number().int().min(0).max(23),
   blocks: z.array(TodayBlock),
   upcoming: z.array(UpcomingDay),
   openTasks: z.array(TodayTask),

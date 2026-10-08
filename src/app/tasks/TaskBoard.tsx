@@ -15,7 +15,7 @@ const statuses: TaskStatus[] = ["open", "done", "parked"];
 
 function dateLabel(dueOn: string | null, today: string): string {
   if (!dueOn) return "No due date";
-  if (dueOn < today) return `Overdue · Due ${format(parseISO(dueOn), "EEE, MMM d")}`;
+  if (dueOn < today) return `Waiting since ${format(parseISO(dueOn), "EEE, MMM d")}`;
   if (dueOn === today) return "Due today";
   return `Due ${format(parseISO(dueOn), "EEE, MMM d")}`;
 }

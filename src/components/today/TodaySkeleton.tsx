@@ -12,22 +12,15 @@ function Rows({ count }: { count: number }) {
 
 export function TodaySkeleton() {
   return (
-    <div className="space-y-8" aria-busy="true" aria-label="Loading your day">
+    <div className="space-y-6" aria-busy="true" aria-label="Opening your day">
       <div className="space-y-2">
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-8 w-64 max-w-full" />
-        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-3 w-44" />
+        <Skeleton className="h-9 w-56 max-w-full" />
+        <Skeleton className="h-4 w-64 max-w-full" />
       </div>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-8">
-          <Rows count={4} />
-          <Rows count={1} />
-        </div>
-        <div className="space-y-8">
-          <Rows count={3} />
-          <Rows count={2} />
-        </div>
-      </div>
+      <Skeleton className="h-44 w-full rounded-2xl" />
+      <Skeleton className="h-32 w-full rounded-2xl" />
+      <Rows count={3} />
     </div>
   );
 }

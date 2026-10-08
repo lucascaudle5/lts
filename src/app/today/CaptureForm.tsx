@@ -1,10 +1,18 @@
 import { createCaptureAction } from "@/app/captures/actions";
+import { Button } from "@/components/ui/button";
 
+/** The hero of Today: a raised card with a gold edge and a serif prompt. */
 export function CaptureForm({ invalid = false }: { invalid?: boolean }) {
   return (
-    <section className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <section
+      aria-label="Capture a note"
+      className="rounded-2xl border border-l-[5px] border-l-gold bg-card p-4 shadow-raised sm:p-5"
+    >
       <form action={createCaptureAction} className="space-y-3">
-        <label htmlFor="capture-text" className="block font-medium">
+        <label
+          htmlFor="capture-text"
+          className="block font-heading text-xl leading-7 font-semibold"
+        >
           What&apos;s going on?
         </label>
         <textarea
@@ -14,7 +22,7 @@ export function CaptureForm({ invalid = false }: { invalid?: boolean }) {
           maxLength={2000}
           rows={3}
           placeholder="Dentist Friday 3–4pm, need groceries…"
-          className="w-full resize-y rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="focus-visible:outline-focus w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-[15px] placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2"
         />
         {invalid ? (
           <p role="alert" className="text-sm text-destructive">
@@ -22,12 +30,9 @@ export function CaptureForm({ invalid = false }: { invalid?: boolean }) {
           </p>
         ) : null}
         <div className="flex justify-end">
-          <button
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-            type="submit"
-          >
-            Review note
-          </button>
+          <Button type="submit" variant="gold" size="lg">
+            See what I heard
+          </Button>
         </div>
       </form>
     </section>

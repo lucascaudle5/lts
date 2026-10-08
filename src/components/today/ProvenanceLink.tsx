@@ -10,7 +10,7 @@ export function ProvenanceLink({
   const date = format(parseISO(provenance.referenceDate), "MMM d");
   return (
     <Link
-      className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+      className="block text-xs text-ink-soft underline underline-offset-4 hover:text-foreground"
       href={`/captures/${provenance.captureId}`}
     >
       From your note on {date}
