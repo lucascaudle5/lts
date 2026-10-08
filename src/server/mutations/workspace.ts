@@ -429,6 +429,7 @@ export async function applyWorkspace(
       .set({
         timezone: operation.timezone,
         aiAuthority: operation.authority,
+        ...(operation.theme ? { theme: operation.theme } : {}),
         updatedAt: new Date(),
       })
       .where(eq(profiles.userId, userId))

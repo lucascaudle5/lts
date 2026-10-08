@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { SignInNotice } from "@/contracts/auth";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeSwitch } from "@/components/theme/ThemeSwitch";
 import { signIn } from "@/app/(auth)/actions";
 import { getSupabaseConfig } from "@/server/supabase";
 
@@ -24,6 +25,9 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
       <Suspense fallback={<Skeleton className="h-36 w-full" />}>
         <SignInContent searchParams={searchParams} />
       </Suspense>
+      <div className="flex justify-end">
+        <ThemeSwitch tone="page" />
+      </div>
     </main>
   );
 }

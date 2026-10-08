@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { ThemeName } from "@/contracts/common";
+
 import {
   createThemeStore,
   DEFAULT_THEME,
@@ -126,6 +128,10 @@ function fakeEnv(initial: { stored?: string; attr?: string } = {}) {
 }
 
 describe("theme store", () => {
+  it("matches the themes the account contract accepts", () => {
+    expect([...THEMES]).toEqual(ThemeName.options);
+  });
+
   it("parses only the three known themes", () => {
     expect(THEMES).toEqual(["sandstone", "blueprint", "dark"]);
     expect(parseTheme("blueprint")).toBe("blueprint");

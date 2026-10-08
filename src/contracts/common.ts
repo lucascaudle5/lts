@@ -26,6 +26,10 @@ export type IsoDate = z.infer<typeof IsoDate>;
 export const HhMm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Expected HH:MM (24-hour)");
 export type HhMm = z.infer<typeof HhMm>;
 
+/** Display theme, saved on the account. Keep in step with THEMES in src/lib/theme.ts. */
+export const ThemeName = z.enum(["sandstone", "blueprint", "dark"]);
+export type ThemeName = z.infer<typeof ThemeName>;
+
 export const Timezone = z.string().min(1).refine(isIanaTimezone, "Unknown IANA timezone");
 export type Timezone = z.infer<typeof Timezone>;
 

@@ -27,7 +27,11 @@ export async function getAiSensitiveCategories(userId: string, db: Db = getDb())
 
 export async function getPreferences(userId: string, db: Db = getDb()) {
   const [row] = await db
-    .select({ timezone: profiles.timezone, authority: profiles.aiAuthority })
+    .select({
+      timezone: profiles.timezone,
+      authority: profiles.aiAuthority,
+      theme: profiles.theme,
+    })
     .from(profiles)
     .where(eq(profiles.userId, userId))
     .limit(1);

@@ -89,6 +89,7 @@ export const profiles = pgTable("profiles", {
   userId: uuid("user_id").primaryKey(),
   timezone: text("timezone").notNull(),
   aiAuthority: text("ai_authority").notNull().default("ask"),
+  theme: text("theme").notNull().default("sandstone"),
   aiSensitiveCategories: text("ai_sensitive_categories")
     .array()
     .notNull()

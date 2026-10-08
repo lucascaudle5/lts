@@ -1,5 +1,5 @@
 import { ShellLayout } from "@/app/_shell/ShellLayout";
 
-export default function SettingsLayout({ children }: LayoutProps<"/settings">) {
+export default function CapturesLayout({ children }: { children: React.ReactNode }) {
   return <ShellLayout>{children}</ShellLayout>;
 }

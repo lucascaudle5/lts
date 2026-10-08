@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { DomainCommand, ScheduleBlockCreate, commandPayloadSchemas } from "./commands";
-import { HhMm, IsoDate, Timezone } from "./common";
+import { HhMm, IsoDate, ThemeName, Timezone } from "./common";
+import { WorkspaceOperation } from "./life";
 import { ProposalItem, SubmitProposals, type ProposalDraft } from "./proposals";
 import { GetScheduleInput, ListOpenTasksInput, toolInputSchemas } from "./tools";
 
@@ -147,5 +148,17 @@ describe("tool inputs", () => {
 
   it("has an input schema for every tool", () => {
     expect(Object.keys(toolInputSchemas)).toHaveLength(5);
+  });
+});
+
+describe("theme contract", () => {
+  it("accepts the three themes on profile.save, optionally", () => {
+    const base = { op: "profile.save", timezone: "America/Chicago", authority: "ask" };
+    expect(WorkspaceOperation.safeParse(base).success).toBe(true);
+    for (const theme of ThemeName.options) {
+      expect(WorkspaceOperation.safeParse({ ...base, theme }).success).toBe(true);
+    }
+    expect(WorkspaceOperation.safeParse({ ...base, theme: "sepia" }).success).toBe(false);
+    expect(WorkspaceOperation.safeParse({ ...base, theme: "system" }).success).toBe(false);
   });
 });

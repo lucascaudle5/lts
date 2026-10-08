@@ -18,7 +18,7 @@ export function Preferences({
   const input = "min-h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm";
   return (
     <form
-      className="space-y-4 rounded-2xl border bg-card p-5"
+      className="space-y-4 rounded-2xl border bg-card p-5 shadow-paper"
       onSubmit={(event) => {
         event.preventDefault();
         const fd = new FormData(event.currentTarget);
@@ -33,7 +33,7 @@ export function Preferences({
         });
       }}
     >
-      <h2 className="font-semibold">Timezone and NOVA authority</h2>
+      <h2 className="text-lg">Timezone and NOVA authority</h2>
       <label className="grid gap-1 text-sm">
         Timezone
         <input
