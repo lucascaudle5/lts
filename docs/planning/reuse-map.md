@@ -5,9 +5,9 @@ cursor:
 
 # Old-to-New Reuse Map
 
-Nothing is copied. Each row says which legacy implementation teaches which concept, where that
-concept lives in LTS 1.0, and when. **Now** = M1–M5 (the slice). **Later** = M6–M8. **Backlog** =
-after v1.0, or only if it unblocks a milestone. **Drop** = not carried forward.
+Historical reuse audit: this records the initial mapping, not current priority. Current behavior,
+status, and porting notes live in [`../LEGACY_PARITY.md`](../LEGACY_PARITY.md). **Drop** marks legacy
+behavior that should not be carried forward.
 
 | Legacy implementation (v2.9.7)                                                                            | Concept                                                 | New destination                                                                  | When                 |
 | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------- |

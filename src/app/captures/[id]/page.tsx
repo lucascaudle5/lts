@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ItemCard } from "@/components/proposals/ItemCard";
 import { requireUser } from "@/server/auth";
 import { getCapture } from "@/server/repositories/captures";
+import { getLatestHarnessRunForCapture } from "@/server/repositories/harnessRuns";
 import { listProposalItemsForCapture } from "@/server/repositories/proposals";
 import { RISK_STOP_MESSAGE } from "@/server/safety";
 
@@ -26,7 +27,10 @@ async function CaptureReviewContent({ params }: { params: Promise<{ id: string }
   const [{ id }, user] = await Promise.all([params, requireUser()]);
   const capture = await getCapture(user.userId, id);
   if (!capture) notFound();
-  const items = await listProposalItemsForCapture(user.userId, capture.id);
+  const [items, run] = await Promise.all([
+    listProposalItemsForCapture(user.userId, capture.id),
+    getLatestHarnessRunForCapture(user.userId, capture.id),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
@@ -53,23 +57,37 @@ async function CaptureReviewContent({ params }: { params: Promise<{ id: string }
         >
           {RISK_STOP_MESSAGE}
         </div>
-      ) : items.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {items.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              captureId={capture.id}
-              updateAction={updateProposalItemAction}
-              approveAction={approveItemsAction}
-              rejectAction={rejectItemsAction}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-          I couldn&apos;t turn that note into a change. Try adding a day, a time, or a clear task.
-        </div>
+        <>
+          {run?.status === "fell_back" ? (
+            <p
+              role="status"
+              className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm leading-relaxed"
+            >
+              AI interpretation was unavailable, so LTS used its built-in parser. Review these
+              suggestions before approving anything.
+            </p>
+          ) : null}
+          {items.length > 0 ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {items.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  captureId={capture.id}
+                  updateAction={updateProposalItemAction}
+                  approveAction={approveItemsAction}
+                  rejectAction={rejectItemsAction}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+              I couldn&apos;t turn that note into a change. Try adding a day, a time, or a clear
+              task.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

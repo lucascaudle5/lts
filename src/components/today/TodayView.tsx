@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "cn";
 import { CalendarDays } from "lucide-react";
 
@@ -74,6 +75,11 @@ export function TodayView({ view }: { view: TodayViewModel }) {
               title="Open tasks"
               meta={view.openTasks.length > 0 ? String(view.openTasks.length) : undefined}
             >
+              <p className="mb-3 text-sm">
+                <Link className="text-primary underline-offset-4 hover:underline" href="/tasks">
+                  Manage tasks
+                </Link>
+              </p>
               {view.openTasks.length > 0 ? (
                 <ul className="divide-y rounded-lg border bg-card">
                   {view.openTasks.map((task) => (
@@ -83,6 +89,8 @@ export function TodayView({ view }: { view: TodayViewModel }) {
                         <ProvenanceLink provenance={task.provenance} />
                         <p className="text-xs text-muted-foreground">
                           {TASK_KIND_LABEL[task.taskKind]}
+                          {" · "}
+                          {task.priority} priority
                         </p>
                       </div>
                       {task.dueLabel ? (

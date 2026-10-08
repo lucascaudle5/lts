@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  bigserial,
   check,
   date,
   doublePrecision,
@@ -15,6 +16,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { CommandKind } from "@/contracts/commands";
+import type { TaskDetails } from "@/contracts/commands";
+import type { LifeRecord } from "@/contracts/life";
 import {
   Actor,
   BlockKind,
@@ -24,6 +27,7 @@ import {
   ObservationSource,
   Sensitivity,
   TaskKind,
+  TaskPriority,
   TaskStatus,
   type MissingSlot,
   type Warning,
@@ -45,6 +49,7 @@ function values<T extends string>(options: readonly T[]): [T, ...T[]] {
 export const blockKind = pgEnum("block_kind", values(BlockKind.options));
 export const taskKind = pgEnum("task_kind", values(TaskKind.options));
 export const taskStatus = pgEnum("task_status", values(TaskStatus.options));
+export const taskPriority = pgEnum("task_priority", values(TaskPriority.options));
 export const observationCategory = pgEnum(
   "observation_category",
   values(ObservationCategory.options),
@@ -68,6 +73,7 @@ export const entityType = pgEnum("entity_type", [
   "task",
   "observation",
   "profile",
+  "life_record",
 ]);
 export const changeAction = pgEnum("change_action", ["create", "update", "delete"]);
 
@@ -82,6 +88,7 @@ const userId = () =>
 export const profiles = pgTable("profiles", {
   userId: uuid("user_id").primaryKey(),
   timezone: text("timezone").notNull(),
+  aiAuthority: text("ai_authority").notNull().default("ask"),
   aiSensitiveCategories: text("ai_sensitive_categories")
     .array()
     .notNull()
@@ -208,6 +215,7 @@ export const scheduleBlocks = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     fixed: boolean("fixed").notNull().default(false),
+    seriesId: uuid("series_id"),
     origin: changeOrigin("origin").notNull(),
     originItemId: originItemId(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -228,8 +236,16 @@ export const tasks = pgTable(
     title: text("title").notNull(),
     kind: taskKind("kind").notNull(),
     dueOn: date("due_on"),
+    priority: taskPriority("priority").notNull().default("medium"),
     status: taskStatus("status").notNull().default("open"),
     notes: text("notes"),
+    details: jsonb("details")
+      .$type<TaskDetails>()
+      .notNull()
+      .default(
+        sql`'{"estimateMinutes":0,"nextAction":"","blocker":"","projectId":null,"subtasks":[],"sessions":[]}'::jsonb`,
+      ),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     origin: changeOrigin("origin").notNull(),
     originItemId: originItemId(),
     createdAt: createdAt(),
@@ -242,6 +258,7 @@ export const observations = pgTable(
   "observations",
   {
     id: id(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     userId: userId(),
     category: observationCategory("category").notNull(),
     valueText: text("value_text").notNull(),
@@ -261,6 +278,7 @@ export const changeLog = pgTable(
   "change_log",
   {
     id: id(),
+    sequence: bigserial("sequence", { mode: "number" }).notNull(),
     userId: userId(),
     mutationId: uuid("mutation_id").notNull(),
     entityType: entityType("entity_type").notNull(),
@@ -279,5 +297,22 @@ export const changeLog = pgTable(
     index("change_log_user_created_idx").on(t.userId, t.createdAt),
     index("change_log_mutation_idx").on(t.mutationId),
     index("change_log_entity_idx").on(t.entityType, t.entityId),
+  ],
+).enableRLS();
+
+export const lifeRecords = pgTable(
+  "life_records",
+  {
+    id: id(),
+    userId: userId(),
+    type: text("type").notNull(),
+    data: jsonb("data").$type<LifeRecord>().notNull(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("life_records_user_type_idx").on(t.userId, t.type),
+    check("life_records_type_matches", sql`${t.data}->>'type' = ${t.type}`),
   ],
 ).enableRLS();

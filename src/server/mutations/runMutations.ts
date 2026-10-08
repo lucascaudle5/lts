@@ -2,11 +2,24 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import {
+  WorkspaceOperation,
+  UserBackup,
+  type WorkspaceOperation as WorkspaceOperationType,
+  type UserBackup as UserBackupType,
+} from "@/contracts/life";
 
 import { DomainCommand, type DomainCommand as DomainCommandType } from "@/contracts/commands";
-import { Actor, TaskStatus, type IsoDate, Uuid, Timezone } from "@/contracts/common";
-import type { ChangeOrigin } from "@/contracts/common";
+import {
+  Actor,
+  TaskStatus,
+  type IsoDate,
+  Uuid,
+  Timezone,
+  SensitiveCategory,
+} from "@/contracts/common";
+import type { ChangeOrigin, SensitiveCategory as SensitiveCategoryType } from "@/contracts/common";
 import type { TaskStatus as TaskStatusType } from "@/contracts/common";
 import { ProposalDraft } from "@/contracts/proposals";
 import { localDateTimeToInstant } from "@/domain/dates";
@@ -17,12 +30,14 @@ import {
   changeLog,
   observations,
   proposalItems,
+  profiles,
   scheduleBlocks,
   tasks,
 } from "@/server/db/schema";
 import { assessProposalDraft } from "@/server/compiler/assessment";
+import { applyWorkspace, assertTaskProject, importRecords } from "./workspace";
 
-type EntityType = "schedule_block" | "task" | "observation";
+type EntityType = "schedule_block" | "task" | "observation" | "profile" | "life_record";
 
 export type MutationRequest =
   | { origin: "proposal"; itemIds: readonly string[] }
@@ -31,7 +46,10 @@ export type MutationRequest =
       commands: readonly { command: DomainCommandType; taskStatus?: TaskStatusType }[];
       timezone: string;
       actor?: Actor;
-    };
+    }
+  | { origin: "manual"; sensitiveCategories: readonly SensitiveCategoryType[] }
+  | { origin: "manual"; workspace: readonly WorkspaceOperationType[]; timezone: string }
+  | { origin: "manual"; importBackup: UserBackupType; timezone: string };
 
 export interface MutationResult {
   mutationId: string;
@@ -63,6 +81,8 @@ async function applyCommand(
   let entityType: EntityType;
   let entityId: string;
   let after: unknown;
+  let before: unknown = null;
+  let action: "create" | "update" = "create";
 
   if (command.kind === "schedule_block.create") {
     if (command.payload.end <= command.payload.start) {
@@ -95,6 +115,7 @@ async function applyCommand(
     entityId = row.id;
     after = row;
   } else if (command.kind === "task.create") {
+    await assertTaskProject(tx, userId, command.payload.details?.projectId);
     const row = (
       await tx
         .insert(tasks)
@@ -103,8 +124,10 @@ async function applyCommand(
           title: command.payload.title,
           kind: command.payload.taskKind,
           dueOn: command.payload.dueOn ?? null,
+          priority: command.payload.priority ?? "medium",
           status: options.taskStatus ?? "open",
           notes: command.payload.notes ?? null,
+          ...(command.payload.details ? { details: command.payload.details } : {}),
           origin: options.origin,
           originItemId: options.proposalItemId,
         })
@@ -113,6 +136,44 @@ async function applyCommand(
     entityType = "task";
     entityId = row.id;
     after = row;
+  } else if (command.kind === "task.update") {
+    await assertTaskProject(tx, userId, command.payload.details?.projectId);
+    const [current] = await tx
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.id, command.payload.taskId),
+          eq(tasks.userId, userId),
+          isNull(tasks.deletedAt),
+        ),
+      )
+      .for("update");
+    if (!current) throw new Error("Task not found");
+    if (
+      command.payload.expectedUpdatedAt &&
+      current.updatedAt.toISOString() !== command.payload.expectedUpdatedAt
+    )
+      throw new Error("This task changed. Refresh before saving again.");
+    const [updated] = await tx
+      .update(tasks)
+      .set({
+        ...(command.payload.title !== undefined ? { title: command.payload.title } : {}),
+        ...(command.payload.taskKind ? { kind: command.payload.taskKind } : {}),
+        ...(command.payload.status ? { status: command.payload.status } : {}),
+        ...(command.payload.priority ? { priority: command.payload.priority } : {}),
+        ...(command.payload.dueOn !== undefined ? { dueOn: command.payload.dueOn } : {}),
+        ...(command.payload.notes !== undefined ? { notes: command.payload.notes } : {}),
+        ...(command.payload.details !== undefined ? { details: command.payload.details } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(tasks.id, current.id), eq(tasks.userId, userId)))
+      .returning();
+    entityType = "task";
+    entityId = current.id;
+    before = current;
+    after = updated;
+    action = "update";
   } else {
     const row = (
       await tx
@@ -142,8 +203,8 @@ async function applyCommand(
     mutationId,
     entityType,
     entityId,
-    action: "create",
-    before: null,
+    action,
+    before: jsonValue(before),
     after: jsonValue(after),
     actor: options.actor,
     origin: options.origin,
@@ -161,10 +222,64 @@ export async function runMutations(
   const parsedUserId = Uuid.parse(userId);
 
   return db.transaction(async (tx) => {
+    // Serializes this user's edits, daily upserts, and undo without blocking other accounts.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${parsedUserId}, 0))`);
     const mutationId = randomUUID();
     const applied: MutationResult["applied"] = [];
 
     if (request.origin === "manual") {
+      if ("importBackup" in request) {
+        const backup = UserBackup.parse(request.importBackup);
+        const timezone = Timezone.parse(request.timezone);
+        applied.push(...(await importRecords(tx, parsedUserId, backup, timezone, mutationId)));
+        return { mutationId, applied };
+      }
+      if ("workspace" in request) {
+        if (!request.workspace.length || request.workspace.length > 500)
+          throw new Error("Choose between 1 and 500 changes");
+        const operations = request.workspace.map((operation) =>
+          WorkspaceOperation.parse(operation),
+        );
+        const timezone = Timezone.parse(request.timezone);
+        for (const operation of operations)
+          applied.push(
+            ...(await applyWorkspace(tx, parsedUserId, operation, timezone, mutationId)),
+          );
+        return { mutationId, applied };
+      }
+      if ("sensitiveCategories" in request) {
+        const categories = [
+          ...new Set(request.sensitiveCategories.map((item) => SensitiveCategory.parse(item))),
+        ];
+        const [before] = await tx
+          .select()
+          .from(profiles)
+          .where(eq(profiles.userId, parsedUserId))
+          .for("update");
+        if (!before) throw new Error("Profile not found");
+        const [after] = await tx
+          .update(profiles)
+          .set({ aiSensitiveCategories: categories, updatedAt: new Date() })
+          .where(eq(profiles.userId, parsedUserId))
+          .returning();
+        await tx.insert(changeLog).values({
+          userId: parsedUserId,
+          mutationId,
+          entityType: "profile",
+          entityId: parsedUserId,
+          action: "update",
+          before: jsonValue({ aiSensitiveCategories: before.aiSensitiveCategories }),
+          after: jsonValue({ aiSensitiveCategories: after.aiSensitiveCategories }),
+          actor: "user",
+          origin: "manual",
+          proposalItemId: null,
+        });
+        return {
+          mutationId,
+          applied: [{ proposalItemId: null, entityType: "profile", entityId: parsedUserId }],
+        };
+      }
+      if (!("commands" in request)) throw new Error("A manual mutation request is required");
       if (request.commands.length === 0) throw new Error("Add at least one change");
       const timezone = Timezone.parse(request.timezone);
       const actor = Actor.parse(request.actor ?? "user");

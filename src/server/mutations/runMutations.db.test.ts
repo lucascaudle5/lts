@@ -2,10 +2,20 @@ import { randomUUID } from "node:crypto";
 
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Db } from "@/server/db/client";
-import { changeLog, captures, profiles, proposalItems, tasks } from "@/server/db/schema";
+import {
+  changeLog,
+  captures,
+  harnessRunPayloads,
+  harnessRuns,
+  observations,
+  profiles,
+  proposalItems,
+  scheduleBlocks,
+  tasks,
+} from "@/server/db/schema";
 import { createTestDatabase, type TestDatabase } from "@/server/db/test-database";
 import { createCapture } from "@/server/captures";
 import { interpretCapture } from "@/server/compiler/interpretCapture";
@@ -55,6 +65,8 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  vi.stubEnv("LTS_AI_PROVIDER", "mock");
+  vi.stubEnv("LTS_AI_TRACE_MODE", "metadata");
   await db.delete(profiles).where(eq(profiles.userId, A));
   await db.delete(profiles).where(eq(profiles.userId, B));
   await db.insert(profiles).values([
@@ -64,6 +76,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
+  vi.unstubAllEnvs();
   await testDb?.drop();
 });
 
@@ -80,11 +93,44 @@ describe("M3 capture and approval loop", () => {
       .from(proposalItems)
       .where(eq(proposalItems.captureId, created.captureId));
     const domainTasks = await db.select().from(tasks).where(eq(tasks.userId, A));
+    const domainBlocks = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.userId, A));
+    const domainObservations = await db
+      .select()
+      .from(observations)
+      .where(eq(observations.userId, A));
 
     expect(captureRow.id).toBe(created.captureId);
     expect(result).toMatchObject({ items: 2, safetyStop: false });
     expect(proposalRows).toHaveLength(2);
     expect(domainTasks).toEqual([]);
+    expect(domainBlocks).toEqual([]);
+    expect(domainObservations).toEqual([]);
+    const [run] = await db
+      .select()
+      .from(harnessRuns)
+      .where(eq(harnessRuns.captureId, created.captureId));
+    expect(run).toMatchObject({ provider: "mock", status: "succeeded", model: null });
+    await expect(
+      db.select().from(harnessRunPayloads).where(eq(harnessRunPayloads.harnessRunId, run.id)),
+    ).resolves.toEqual([]);
+  });
+
+  it("stores raw traces only in full mode with a bounded expiry", async () => {
+    vi.stubEnv("LTS_AI_TRACE_MODE", "full");
+    vi.stubEnv("LTS_AI_TRACE_RETENTION_DAYS", "2");
+    const created = await createCapture(A, "need groceries", TZ, NOW, db);
+    await interpretCapture(A, created.captureId, db);
+    const [run] = await db
+      .select()
+      .from(harnessRuns)
+      .where(eq(harnessRuns.captureId, created.captureId));
+    const [payload] = await db
+      .select()
+      .from(harnessRunPayloads)
+      .where(eq(harnessRunPayloads.harnessRunId, run.id));
+    expect(payload.rawPrompt).toContain("need groceries");
+    expect(payload.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(payload.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 2 * 86_400_000);
   });
 
   it("keeps capture and proposal reads scoped to their owner", async () => {
@@ -205,5 +251,97 @@ describe("M3 capture and approval loop", () => {
       origin: "manual",
       proposalItemId: null,
     });
+  });
+
+  it("updates a task and records its before and after values in the audit log", async () => {
+    const taskId = randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId: A,
+      title: "Essay",
+      kind: "assignment",
+      dueOn: "2026-10-10",
+      origin: "manual",
+    });
+
+    const result = await runMutations(
+      A,
+      {
+        origin: "manual",
+        timezone: TZ,
+        commands: [
+          {
+            command: {
+              kind: "task.update",
+              payload: { taskId, status: "done", priority: "high", dueOn: null },
+            },
+          },
+        ],
+      },
+      db,
+    );
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    const [log] = await db
+      .select()
+      .from(changeLog)
+      .where(eq(changeLog.mutationId, result.mutationId));
+    expect(task).toMatchObject({ status: "done", priority: "high", dueOn: null });
+    expect(log).toMatchObject({
+      entityType: "task",
+      entityId: taskId,
+      action: "update",
+      origin: "manual",
+    });
+    expect(log.before).toMatchObject({ status: "open", priority: "medium", dueOn: "2026-10-10" });
+    expect(log.after).toMatchObject({ status: "done", priority: "high", dueOn: null });
+  });
+
+  it("does not let a user update another user's task", async () => {
+    const taskId = randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId: B,
+      title: "B private task",
+      kind: "other",
+      origin: "manual",
+    });
+
+    await expect(
+      runMutations(
+        A,
+        {
+          origin: "manual",
+          timezone: TZ,
+          commands: [{ command: { kind: "task.update", payload: { taskId, status: "done" } } }],
+        },
+        db,
+      ),
+    ).rejects.toThrow("Task not found");
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    expect(task).toMatchObject({ userId: B, status: "open" });
+    await expect(db.select().from(changeLog).where(eq(changeLog.userId, A))).resolves.toEqual([]);
+  });
+
+  it("audits updates to sensitive-category AI access settings", async () => {
+    const result = await runMutations(
+      A,
+      { origin: "manual", sensitiveCategories: ["energy", "sleep"] },
+      db,
+    );
+    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, A));
+    const [log] = await db.select().from(changeLog).where(eq(changeLog.userId, A));
+    expect(profile.aiSensitiveCategories).toEqual(["energy", "sleep"]);
+    expect(log).toMatchObject({
+      mutationId: result.mutationId,
+      entityType: "profile",
+      entityId: A,
+      action: "update",
+      actor: "user",
+      origin: "manual",
+    });
+    expect(log.before).toEqual({ aiSensitiveCategories: [] });
+    expect(log.after).toEqual({ aiSensitiveCategories: ["energy", "sleep"] });
   });
 });

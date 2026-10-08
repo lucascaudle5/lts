@@ -41,8 +41,14 @@ export type TaskKind = z.infer<typeof TaskKind>;
 export const TaskStatus = z.enum(["open", "done", "parked"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;
 
+export const TaskPriority = z.enum(["low", "medium", "high"]);
+export type TaskPriority = z.infer<typeof TaskPriority>;
+
 export const ObservationCategory = z.enum(["energy", "sleep", "stress", "capacity", "note"]);
 export type ObservationCategory = z.infer<typeof ObservationCategory>;
+
+export const SensitiveCategory = z.enum(["energy", "sleep", "stress", "capacity", "note"]);
+export type SensitiveCategory = z.infer<typeof SensitiveCategory>;
 
 export const ObservationSource = z.enum(["user_statement", "manual_entry"]);
 export type ObservationSource = z.infer<typeof ObservationSource>;

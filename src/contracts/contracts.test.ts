@@ -23,6 +23,15 @@ const commands: DomainCommand[] = [
   { kind: "task.create", payload: { title: "Test", taskKind: "exam", dueOn: "2026-10-13" } },
   { kind: "task.create", payload: { title: "Groceries", taskKind: "errand" } },
   {
+    kind: "task.update",
+    payload: {
+      taskId: "00000000-0000-4000-8000-000000000001",
+      status: "done",
+      priority: "high",
+      dueOn: null,
+    },
+  },
+  {
     kind: "observation.record",
     payload: { category: "energy", valueText: "exhausted lately", occurredOn: "2026-10-07" },
   },
@@ -35,7 +44,7 @@ describe("domain commands", () => {
 
   it("has a payload schema for every kind", () => {
     expect(Object.keys(commandPayloadSchemas).sort()).toEqual(
-      ["observation.record", "schedule_block.create", "task.create"].sort(),
+      ["observation.record", "schedule_block.create", "task.create", "task.update"].sort(),
     );
   });
 

@@ -97,7 +97,7 @@ export async function signInWithPassword(request: SignInRequest): Promise<Passwo
 
 async function siteOrigin(): Promise<string> {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
-  if (configured) return new URL(configured).origin;
+  if (configured && process.env.VERCEL_ENV !== "preview") return new URL(configured).origin;
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:4317";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");

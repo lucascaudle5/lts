@@ -46,7 +46,14 @@ describe("buildTodayView", () => {
 
   it("is empty only when every section is empty", () => {
     expect(build({}).isEmpty).toBe(true);
-    const task = { id: "00000000-0000-4000-9000-000000000000", title: "x", dueOn: null };
+    const task = {
+      id: "00000000-0000-4000-9000-000000000000",
+      title: "x",
+      dueOn: null,
+      priority: "medium" as const,
+      status: "open" as const,
+      notes: null,
+    };
     expect(build({ openTasks: [{ ...task, kind: "other" }] }).isEmpty).toBe(false);
   });
 
@@ -101,16 +108,48 @@ describe("buildTodayView", () => {
     const id = (n: number) => `00000000-0000-4000-9000-00000000000${n}`;
     const view = build({
       openTasks: [
-        { id: id(1), title: "Was due", kind: "assignment", dueOn: "2026-10-05" },
-        { id: id(2), title: "Today", kind: "chore", dueOn: "2026-10-07" },
-        { id: id(3), title: "Exam", kind: "exam", dueOn: "2026-10-13" },
-        { id: id(4), title: "Groceries", kind: "errand", dueOn: null },
+        {
+          id: id(1),
+          title: "Was due",
+          kind: "assignment",
+          dueOn: "2026-10-05",
+          priority: "high",
+          status: "open",
+          notes: null,
+        },
+        {
+          id: id(2),
+          title: "Today",
+          kind: "chore",
+          dueOn: "2026-10-07",
+          priority: "medium",
+          status: "open",
+          notes: null,
+        },
+        {
+          id: id(3),
+          title: "Exam",
+          kind: "exam",
+          dueOn: "2026-10-13",
+          priority: "high",
+          status: "open",
+          notes: null,
+        },
+        {
+          id: id(4),
+          title: "Groceries",
+          kind: "errand",
+          dueOn: null,
+          priority: "low",
+          status: "open",
+          notes: null,
+        },
       ],
     });
     expect(
       view.openTasks.map((t) => [t.title, t.dueLabel, t.dueToday, t.pastDue, t.taskKind]),
     ).toEqual([
-      ["Was due", "Due Mon, Oct 5", false, true, "assignment"],
+      ["Was due", "Overdue · Due Mon, Oct 5", false, true, "assignment"],
       ["Today", "Due today", true, false, "chore"],
       ["Exam", "Due Tue, Oct 13", false, false, "exam"],
       ["Groceries", null, false, false, "errand"],

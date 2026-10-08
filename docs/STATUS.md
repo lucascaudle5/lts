@@ -1,49 +1,46 @@
 # Status
 
-Last updated 2026-10-07.
+Last updated 2026-10-08.
 
-## Where things are
+## Current delivery
 
-| Milestone                                           | State                                                                                                        |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| M0: repo skeleton                                   | Merged (not tagged yet)                                                                                      |
-| M1: contracts and database                          | Merged ([PR #2](https://github.com/lucascaudle5/lts/pull/2))                                                 |
-| M2: sign-in, app shell, read-only Today             | In [PR #3](https://github.com/lucascaudle5/lts/pull/3) (branch `m2-auth-today`), waiting on the deploy check |
-| M3: capture → parser → proposals → approval → Today | Next                                                                                                         |
+The `m4-ai-harness` branch contains the complete workspace candidate, version `0.4.0`:
+Today, schedule, tasks/assignments, habits, routines, fitness, diet, Mind, projects, money,
+Review, history/archive, sandbox/demo, settings, and NOVA capture with Gateway and parser fallback.
+See [LEGACY_PARITY.md](LEGACY_PARITY.md) for features and explicit boundaries and
+[ADR 0010](adr/0010-typed-workspace-records.md) for the typed supplemental record design.
 
-**To finish M2:** do the "M2 deploy check" at the end of
-[`planning/hosting-setup.md`](planning/hosting-setup.md#m2-deploy-check) (Supabase redirect URLs,
-Vercel Production env vars, production migrations, sign-in and Today on phone and laptop). Then
-mark PR #3 ready, merge it, and tag:
+M0–M3 are merged; Production is still the M3/password sign-in release. This candidate adds manual
+tracking across the parity sprints while preserving existing auth, proposals, mutations and audit.
 
-```bash
-git switch main && git pull
-git tag -a v0.2.0 -m "M2: sign-in, shell, read-only Today"
-git push origin v0.2.0
-```
+## Checks already completed
 
-**Next:** M3, exactly as defined in [`planning/build-sequence.md`](planning/build-sequence.md), with
-the slice details in [`planning/v1-vertical-slice.md`](planning/v1-vertical-slice.md). Start it
-from `main` after PR #3 is merged; M3 builds on M2's auth, repositories, and Today.
+Before Lucas asked to stop testing and open the PR:
 
-## Known issues
+- `pnpm check`: passed, including 260 unit tests.
+- `pnpm build`: passed.
+- `pnpm test:db`: passed, 56 tests in seven files against disposable Postgres 17.
+- Gateway evaluation revealed a five-requests/minute quota and exact-field discrepancies. The
+  paced rerun completed at 87.0% (127/146 fields), with zero provider failures. The 90%
+  acceptance gate remains unmet.
 
-- **Windows `.env.local` encoding:** Notepad or PowerShell `>` can save `.env.local` as UTF-16 or
-  with a BOM, which left `db:migrate` with an empty URL. Handled in PR #3: scripts decode those files
-  and fail with a fix-it message if the URL is still missing.
-- **CI visibility for Cursor workers:** the token Cursor workers used couldn't read GitHub Actions
-  results. This doesn't matter for Codex or for Lucas in the GitHub UI.
+The final public demo, sandbox import/export adjustments and version bump were added after those
+checks. No further tests or browser verification are being run, per Lucas's explicit instruction.
+CI can report on the pushed PR. This is a development candidate, not a production release/tag.
 
-## How to start a Codex session
+## Dev and Production
 
-Open the repo on your computer, make sure `main` is up to date, and start Codex in the repo root.
-Codex reads `AGENTS.md` on its own. Then give it one milestone at a time. A good first prompt for M3:
+One Vercel project, separate environment connections: Preview uses `lts-dev`
+(`aiioatnjffphxygqmiap`); Production uses `lts` (`kcnsibqyloxuuvsoofta`). Hosted builds validate both
+Auth and Postgres references, then apply additive migrations. Preview Secrets are intentionally not
+exportable by the CLI. Use the branch Preview to try updates; no local services are needed.
 
-> Read AGENTS.md, docs/STATUS.md, and the M3 section of docs/planning/build-sequence.md, plus the
-> slice spec in docs/planning/v1-vertical-slice.md. Create branch `m3-approval-loop` from main and
-> implement M3 exactly as defined there, respecting its "Do not build yet" list: no model calls.
-> All domain writes go through `runMutations` in one transaction with `change_log` and provenance;
-> `approveItems` must only call the mutation layer. Write the tests M3 lists, including authorization,
-> rollback, and cross-user isolation. Use small commits as Lucas Caudle <lucascaudle5@gmail.com>.
-> Make `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm build`, and `pnpm test:db` pass,
-> then open a PR to main and summarize what was built against M3's definition of done.
+The public `/demo` contains fictional data and browser-memory changes only. `/today` and all saved
+account data, exports and server mutations still require authentication. JSON import creates new
+records rather than replaying historical captures or audit logs.
+
+## Follow-up
+
+Review the candidate on Preview and complete authenticated desktop/phone flows when Lucas is ready.
+Resolve real-provider evaluation results before calling M4 fully accepted. Production promotion and
+release tagging happen after review and green CI.

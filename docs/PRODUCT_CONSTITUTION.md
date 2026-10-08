@@ -4,15 +4,16 @@ These articles decide arguments. When a feature, prompt, or schema conflicts wit
 article wins and the feature changes. Amending an article requires an ADR.
 
 **One line:** LTS turns messy real life into structure that changes what Lucas understands,
-decides, or does next. AI interprets and proposes. The user governs.
+decides, or does next. AI interprets within authority the user grants; the user governs.
 
 ## Articles
 
 1. **A tracker must improve understanding, decision, or action.** Every tracked field must feed a
    screen, a review, or a proposal. If nothing reads it, stop collecting it.
-2. **AI proposes; the user decides.** Models produce proposals, explanations, and questions. They
-   never write domain state. All consequential domain mutations go through the same audited
-   mutation layer; AI-generated mutations additionally require the user's approval of the proposal.
+2. **The user grants authority; LTS stays within it.** Explicit, low-risk commands may execute
+   directly when the user's permission setting allows them. Autonomous or interpretive changes and
+   high-impact actions ask first. All consequential domain mutations go through the same audited
+   mutation layer; the model never receives unrestricted database access.
 3. **Observation is not inference.** What the user said, logged, or a device measured is an
    _observation_. What anyone (AI or rule) concluded from it is an _inference_. They live in
    different tables, render differently, and an inference never becomes an observation without the
@@ -27,13 +28,15 @@ decides, or does next. AI interprets and proposes. The user governs.
    in v1.
 8. **Reality beats aesthetics.** A plain screen that matches what happened beats a beautiful one that
    implies precision LTS does not have. No pseudo-precise life scores.
-9. **No silent mutation of consequential state.** Schedule, commitments, health-adjacent data, and
-   settings change only through an approved proposal or a direct user edit. Both paths run through
-   the same mutation layer, so every change is validated, authorized, atomic, and in the change log
-   with before/after and its origin. Narrow automations are allowed only when the user deliberately
-   configured that exact automation, and they use the same layer.
+9. **Consequential changes are governed and recoverable.** Schedule, commitments, health-adjacent
+   data, and settings change through an authorized direct command, a confirmed proposal, or a direct
+   user edit. Every path runs through the same mutation layer, so each change is validated,
+   authorized, atomic, and recorded with before/after and origin. High-impact or destructive changes
+   require confirmation. Narrow automations require deliberate configuration and use the same layer.
 10. **Ship before redesigning.** LTS 1.0 gets finished even if we become smarter while building it.
-11. **New ideas go to the backlog** unless they solve a demonstrated blocker for the current milestone.
+11. **Legacy capability is product evidence.** Check `docs/LEGACY_PARITY.md` before substantial
+    feature work. Restore useful behavior on the current foundation; discard unsafe behavior and bad
+    implementation structure. New ideas outside the parity target go to the backlog.
 
 ## Health and safety boundaries
 
@@ -47,7 +50,8 @@ LTS **must not**:
 
 - diagnose, name conditions, or prescribe or adjust medication;
 - present uncertain psychological interpretations as fact, or assign identity/personality labels;
-- silently create or change health-adjacent records (all such writes need approval, Article 9);
+- infer or fabricate health-adjacent records; only user-stated or measured observations may be
+  recorded, and sensitive or consequential changes require confirmation (Article 9);
 - encourage obsessive self-surveillance (no prompts to log more than the user chose);
 - produce shame-based copy (Article 4).
 

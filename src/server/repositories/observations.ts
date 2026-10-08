@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 import type { IsoDate } from "@/contracts/common";
 import { getDb, type Db } from "@/server/db/client";
@@ -32,6 +32,12 @@ export async function listObservationsOn(
       and(eq(observations.originItemId, proposalItems.id), eq(proposalItems.userId, userId)),
     )
     .leftJoin(captures, and(eq(proposalItems.captureId, captures.id), eq(captures.userId, userId)))
-    .where(and(eq(observations.userId, userId), eq(observations.occurredOn, date)))
+    .where(
+      and(
+        eq(observations.userId, userId),
+        eq(observations.occurredOn, date),
+        isNull(observations.deletedAt),
+      ),
+    )
     .orderBy(asc(observations.createdAt), asc(observations.id));
 }
