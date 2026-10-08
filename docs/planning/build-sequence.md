@@ -3,6 +3,13 @@ cursor:
   subagentId: "bc-ecf16999-a762-5e4d-83e3-ddf053109c87"
 ---
 
+> **Note (2026-10-08).** The constitution amendments in
+> [`PRODUCT_CONSTITUTION.md`](../PRODUCT_CONSTITUTION.md) and
+> [ADR 0011](../adr/0011-constitution-amendments-2026-10-08.md) override this document where it
+> says "no streaks" or "no scores" (streaks are allowed as factual continuity metrics; self-reported
+> numeric scales are allowed when labeled) or says AI-generated mutations always need proposal
+> approval (allowlisted direct execution is allowed). Kept as written for history.
+
 # Build Sequence: M0 → v1.0
 
 Staged roadmap, not a feature freeze. Finish the minimum M4 harness work, then use
