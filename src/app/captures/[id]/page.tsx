@@ -53,7 +53,7 @@ async function CaptureReviewContent({ params }: { params: Promise<{ id: string }
       {capture.safetyStop ? (
         <div
           role="status"
-          className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm leading-relaxed"
+          className="rounded-xl border border-gold/50 bg-gold-soft p-4 text-sm leading-relaxed"
         >
           {RISK_STOP_MESSAGE}
         </div>
@@ -62,7 +62,7 @@ async function CaptureReviewContent({ params }: { params: Promise<{ id: string }
           {run?.status === "fell_back" ? (
             <p
               role="status"
-              className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm leading-relaxed"
+              className="rounded-xl border border-gold/50 bg-gold-soft p-4 text-sm leading-relaxed"
             >
               AI interpretation was unavailable, so LTS used its built-in parser. Review these
               suggestions before approving anything.

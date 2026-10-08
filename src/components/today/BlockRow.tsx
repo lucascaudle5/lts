@@ -12,7 +12,7 @@ export function BlockRow({ block, showTiming }: { block: TodayBlock; showTiming:
   return (
     <li
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-l-4 bg-card px-3 py-2.5",
+        "flex items-start gap-3 rounded-lg border border-l-4 border-l-(--k) bg-(--k-soft) px-3 py-2.5",
         BLOCK_KIND_ACCENT[block.blockKind],
         !block.fixed && "border-dashed",
         isNow && "ring-2 ring-primary/30",
