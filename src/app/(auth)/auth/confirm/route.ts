@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { SIGN_IN_PATH } from "@/server/access";
-import { completeSignIn } from "@/server/auth";
+import { completePasswordRecovery } from "@/server/auth";
 
-/** Landing point of the magic link (set as `emailRedirectTo`). */
+/** Landing point for an explicitly requested password recovery email. */
 export async function GET(request: NextRequest) {
-  const result = await completeSignIn(request.nextUrl.searchParams);
-  const target = result.ok ? result.next : `${SIGN_IN_PATH}?notice=${result.notice}`;
+  const result = await completePasswordRecovery(request.nextUrl.searchParams);
+  const target = result.ok ? "/reset-password" : "/forgot-password?notice=recovery_link_invalid";
   return NextResponse.redirect(new URL(target, request.url));
 }

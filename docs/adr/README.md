@@ -18,6 +18,7 @@ met. That evidence goes in the new ADR's Context section; "a newer tool looks ni
 | [0006](0006-observations-are-not-inferences.md) | Observations and inferences are separate records                                     | Accepted |
 | [0007](0007-github-canonical.md)                | GitHub is the canonical home for code, issues, and CI                                | Accepted |
 | [0008](0008-single-package-not-monorepo.md)     | One package with enforced folders, not a monorepo                                    | Accepted |
+| [0009](0009-password-based-sign-in.md)          | Supabase Auth email/password for routine sign-in                                     | Accepted |
 
 ## Template
 

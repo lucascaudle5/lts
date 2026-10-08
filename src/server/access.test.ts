@@ -9,7 +9,8 @@ describe("accessRedirect", () => {
     ["/history", "", "/sign-in?next=%2Fhistory"],
     ["/", "", "/sign-in"],
     ["/sign-in", "", null],
-    ["/auth/confirm", "?code=x", null],
+    ["/forgot-password", "", null],
+    ["/reset-password", "", null],
     ["/api/health", "", null],
     ["/sign-inx", "", "/sign-in?next=%2Fsign-inx"],
   ])("signed out: %s%s → %s", (path, search, expected) => {
@@ -37,7 +38,6 @@ describe("safeNextPath", () => {
     ["/\\evil.example", "/today"],
     ["today", "/today"],
     ["/sign-in", "/today"],
-    ["/auth/confirm?code=1", "/today"],
   ])("%s → %s", (next, expected) => {
     expect(safeNextPath(next)).toBe(expected);
   });

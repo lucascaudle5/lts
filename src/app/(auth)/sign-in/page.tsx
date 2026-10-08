@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { SignInNotice } from "@/contracts/auth";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requestMagicLink } from "@/app/(auth)/actions";
+import { signIn } from "@/app/(auth)/actions";
 import { getSupabaseConfig } from "@/server/supabase";
 
 export const metadata: Metadata = { title: "Sign in · LTS" };
@@ -18,7 +18,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">Sign in to see your day</h1>
         <p className="text-sm text-muted-foreground">
-          Use the same email on your phone and laptop; both show the same data.
+          Sign in with your email and password. Your data stays in sync across devices.
         </p>
       </header>
       <Suspense fallback={<Skeleton className="h-36 w-full" />}>
@@ -34,7 +34,7 @@ async function SignInContent({ searchParams }: Pick<PageProps<"/sign-in">, "sear
   const configured = getSupabaseConfig() !== null;
   return (
     <SignInForm
-      action={requestMagicLink}
+      action={signIn}
       next={typeof params.next === "string" ? params.next : undefined}
       notice={configured ? (notice.success ? notice.data : undefined) : "not_configured"}
       configured={configured}

@@ -80,12 +80,12 @@ misbehaves, use Option 2.
 4. In Vercel → **Settings → Environment Variables**, add those four for **Production** (and
    Development if you'll use `vercel env pull`).
 
-### Configure sign-in redirects (both options)
+### Configure password recovery redirects
 
 Supabase → **Authentication → URL Configuration**:
 
 - **Site URL:** your production URL, e.g. `https://lts-yourname.vercel.app` (it defaults to
-  `http://localhost:3000`, which breaks magic links).
+  `http://localhost:3000`, which breaks password recovery links).
 - **Redirect URLs:** add `http://localhost:4317/**`. If you later connect previews, also add
   `https://*-<your-vercel-team-slug>.vercel.app/**`.
 
@@ -162,8 +162,8 @@ Order for a release with schema changes: migrate first, then merge or promote th
 ## E. Use it on phone and laptop
 
 1. On both devices, open the **same production URL**. Don't use preview URLs for real life data.
-2. Sign in with the **same email** on both. Open the magic link **on the device you're signing in
-   on**, because the link signs in the browser that opens it.
+2. Sign in with the **same email and password** on both. Routine sign-in does not send an email.
+   Use **Forgot password?** only when you need to recover the account.
 3. On the phone: browser menu → **Add to Home Screen** for one-tap access.
 4. Sync check: create a task on the laptop, then refresh Today on the phone. It should appear.
    LTS keeps no data in the browser (only the sign-in cookie); both devices read the same Supabase
@@ -193,10 +193,8 @@ with no trailing slash.
 
 - [ ] **Site URL** = `<prod>`
 - [ ] **Redirect URLs** include both `<prod>/**` and `http://localhost:4317/**`
-- [ ] Keep the default Magic Link email template. Only if links opened from your phone's mail app
-      keep showing "That link didn't work": in Authentication → Emails → Magic Link, change the
-      link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`. Links made that way work
-      in any browser.
+- [ ] Password recovery uses the default Supabase recovery email template and returns to
+      `/auth/confirm`; routine email/password sign-in does not use redirects or send email.
 
 **2. Environment variables on Vercel Production** (Project → Settings → Environment Variables,
 Production)
@@ -240,23 +238,20 @@ pnpm dlx dotenv-cli -e .env.production.local -- pnpm db:migrate
       `{"status":"ok","version":"0.2.0","commit":"<first 7 characters of the deployed commit>","db":"ok"}`.
       If you see `"db":"error"` (HTTP 503), recheck `POSTGRES_URL` and step 3.
 - [ ] In a private window, `<prod>/today` redirects to `/sign-in?next=%2Ftoday`.
-- [ ] On `<prod>`, enter your email and press **Send link**. You see "Check your email". Open the
-      email **on the laptop** and click the link in the same browser. You land on `/today`, which
-      shows today's date and "Times shown in America/Chicago" (or your own timezone).
+- [ ] On `<prod>`, enter your email and password. You land on `/today`, which shows today's date
+      and "Times shown in America/Chicago" (or your own timezone).
 - [ ] Today shows "Nothing planned yet." That is expected: production has no seed data, and
       capture arrives in M3.
 - [ ] Supabase → Table Editor → `profiles` has one row with your timezone.
 
 **5. Check sign-in and Today on the phone**
 
-- [ ] Open the same `<prod>` URL in Safari or Chrome (not a preview URL). Ask for the link **from
-      the browser your mail app opens links in**. Sign-in links only work in the browser that
-      requested them, unless you changed the template in step 1.
-- [ ] Open the email on the phone and tap the link. You land on Today with the same date and
+- [ ] Open the same `<prod>` URL in Safari or Chrome (not a preview URL), then sign in with the
+      same email and password. You land on Today with the same date and
       timezone as on the laptop, and Supabase still shows one `profiles` row (same account, same
       data).
 - [ ] Optional: browser menu → **Add to Home Screen**.
-- If you see "Too many links were requested", Supabase's built-in email sender allows only a few
-  emails per hour. Wait, then try again.
+- Routine sign-in doesn't send email. Password recovery still uses one email when requested and is
+  subject to Supabase's configured email provider limits.
 - Optional, once both devices are signed in: Supabase → Authentication → Sign In / Providers →
   turn off **Allow new users to sign up**, so nobody else can create an account.

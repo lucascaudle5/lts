@@ -5,15 +5,15 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import type { SignInNotice, SignInRequest } from "@/contracts/auth";
+import type { PasswordResetRequest, SignInRequest } from "@/contracts/auth";
 import { Timezone, Uuid } from "@/contracts/common";
-import { safeNextPath, SIGN_IN_PATH } from "@/server/access";
+import { SIGN_IN_PATH } from "@/server/access";
 import { getDb, type Db } from "@/server/db/client";
 import { profiles } from "@/server/db/schema";
 import { getProfile, type ProfileRow } from "@/server/repositories/profiles";
 import { createRequestAuthClient } from "@/server/supabase";
 
-/** Used only when the sign-in link carried no valid browser timezone. */
+/** Used when the sign-in form carried no valid browser timezone. */
 export const DEFAULT_TIMEZONE = "UTC";
 
 export interface SessionUser {
@@ -71,7 +71,30 @@ export async function requireUser(db?: Db): Promise<CurrentUser> {
   return { ...session, timezone: profile.timezone };
 }
 
-/** Prefer the configured site URL so magic links always match Supabase's redirect allow-list. */
+export type PasswordSignInResult =
+  { ok: true } | { ok: false; reason: "not_configured" | "invalid_credentials" | "failed" };
+
+/** Sign in without sending an email; Supabase verifies the credentials and stores the session. */
+export async function signInWithPassword(request: SignInRequest): Promise<PasswordSignInResult> {
+  const supabase = await createRequestAuthClient();
+  if (!supabase) return { ok: false, reason: "not_configured" };
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: request.email,
+    password: request.password,
+  });
+  if (!error && data.user) {
+    await ensureProfile(data.user.id, resolveTimezone(request.timezone));
+    return { ok: true };
+  }
+
+  if (error?.code === "invalid_credentials" || error?.code === "email_not_confirmed") {
+    return { ok: false, reason: "invalid_credentials" };
+  }
+  console.error("signInWithPassword failed", error?.code ?? error?.status ?? "missing_user");
+  return { ok: false, reason: "failed" };
+}
+
 async function siteOrigin(): Promise<string> {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (configured) return new URL(configured).origin;
@@ -81,67 +104,62 @@ async function siteOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-export type SendLinkResult =
+export type PasswordResetResult =
   { ok: true } | { ok: false; reason: "not_configured" | "rate_limited" | "failed" };
 
-export async function sendMagicLink(request: SignInRequest): Promise<SendLinkResult> {
+/** Email is used only for explicit account recovery, not routine sign-in. */
+export async function sendPasswordReset(
+  request: PasswordResetRequest,
+): Promise<PasswordResetResult> {
   const supabase = await createRequestAuthClient();
   if (!supabase) return { ok: false, reason: "not_configured" };
-
-  const confirmUrl = new URL("/auth/confirm", await siteOrigin());
-  confirmUrl.searchParams.set("next", safeNextPath(request.next));
-  if (request.timezone && Timezone.safeParse(request.timezone).success) {
-    confirmUrl.searchParams.set("tz", request.timezone);
-  }
-
-  const { error } = await supabase.auth.signInWithOtp({
-    email: request.email,
-    options: { emailRedirectTo: confirmUrl.toString(), shouldCreateUser: true },
-  });
+  const redirectTo = new URL("/auth/confirm", await siteOrigin()).toString();
+  const { error } = await supabase.auth.resetPasswordForEmail(request.email, { redirectTo });
   if (!error) return { ok: true };
   if (error.status === 429 || error.code === "over_email_send_rate_limit") {
     return { ok: false, reason: "rate_limited" };
   }
-  console.error("signInWithOtp failed", error.code ?? error.status);
+  console.error("resetPasswordForEmail failed", error.code ?? error.status);
   return { ok: false, reason: "failed" };
 }
 
-const EMAIL_OTP_TYPES = new Set<EmailOtpType>(["email", "magiclink", "signup"]);
+export type CompletePasswordRecoveryResult = { ok: true } | { ok: false };
 
-export type CompleteSignInResult = { ok: true; next: string } | { ok: false; notice: SignInNotice };
-
-/**
- * Finishes a magic-link sign-in from `/auth/confirm`. Supports the default email template (PKCE
- * `code`, which must be opened in the browser that asked for the link) and a `token_hash`
- * template (works in any browser).
- */
-export async function completeSignIn(params: URLSearchParams): Promise<CompleteSignInResult> {
+/** Exchanges a single-use Supabase PKCE recovery code into the browser session. */
+export async function completePasswordRecovery(
+  params: URLSearchParams,
+): Promise<CompletePasswordRecoveryResult> {
   const supabase = await createRequestAuthClient();
-  if (!supabase) return { ok: false, notice: "not_configured" };
-
-  const errorCode = params.get("error_code");
-  if (errorCode) {
-    return { ok: false, notice: errorCode === "otp_expired" ? "link_expired" : "link_invalid" };
-  }
+  if (!supabase || params.has("error_code")) return { ok: false };
 
   const code = params.get("code");
-  const tokenHash = params.get("token_hash");
-  const type = params.get("type") as EmailOtpType | null;
-
-  const result = code
-    ? await supabase.auth.exchangeCodeForSession(code)
-    : tokenHash && type && EMAIL_OTP_TYPES.has(type)
-      ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
-      : null;
-  if (!result) return { ok: false, notice: "link_invalid" };
-
-  const { data, error } = result;
-  if (error || !data.user) {
-    return { ok: false, notice: error?.code === "otp_expired" ? "link_expired" : "link_invalid" };
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    return !error && Boolean(data.user) ? { ok: true } : { ok: false };
   }
 
-  await ensureProfile(data.user.id, resolveTimezone(params.get("tz")));
-  return { ok: true, next: safeNextPath(params.get("next")) };
+  const tokenHash = params.get("token_hash");
+  if (tokenHash && params.get("type") === "recovery") {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery" satisfies EmailOtpType,
+    });
+    return !error && Boolean(data.user) ? { ok: true } : { ok: false };
+  }
+  return { ok: false };
+}
+
+export async function updatePassword(password: string): Promise<boolean> {
+  const supabase = await createRequestAuthClient();
+  if (!supabase) return false;
+  const { data: claims, error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError || !Uuid.safeParse(claims?.claims?.sub).success) return false;
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.error("updateUser password failed", error.code ?? error.status);
+    return false;
+  }
+  return true;
 }
 
 export async function signOutCurrentUser(): Promise<void> {

@@ -8,7 +8,6 @@ import { createTestDatabase, type TestDatabase } from "@/server/db/test-database
 const mocks = vi.hoisted(() => ({
   db: null as Db | null,
   sub: null as string | null,
-  exchangedUserId: null as string | null,
 }));
 
 vi.mock("@/server/db/client", async (importOriginal) => ({
@@ -22,10 +21,6 @@ vi.mock("@/server/supabase", () => ({
         data: mocks.sub ? { claims: { sub: mocks.sub, email: "sam@example.com" } } : null,
         error: null,
       }),
-      exchangeCodeForSession: async () => ({
-        data: { user: { id: mocks.exchangedUserId }, session: {} },
-        error: null,
-      }),
     },
   }),
 }));
@@ -35,7 +30,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-const { completeSignIn, ensureProfile, requireUser } = await import("./auth");
+const { ensureProfile, requireUser } = await import("./auth");
 
 const NEW_USER = "eeeeeeee-0000-4000-8000-00000000000e";
 const RETURNING = "ffffffff-0000-4000-8000-00000000000f";
@@ -53,7 +48,6 @@ afterAll(async () => {
 
 beforeEach(() => {
   mocks.sub = null;
-  mocks.exchangedUserId = null;
 });
 
 async function timezoneOf(userId: string) {
@@ -82,12 +76,8 @@ describe("profile bootstrap", () => {
     expect(await timezoneOf(userId)).toBe("UTC");
   });
 
-  it("first sign-in stores the browser timezone from the link and continues to next", async () => {
-    mocks.exchangedUserId = NEW_USER;
-    const result = await completeSignIn(
-      new URLSearchParams("code=abc&tz=America%2FChicago&next=%2Ftoday"),
-    );
-    expect(result).toEqual({ ok: true, next: "/today" });
+  it("first sign-in stores the browser timezone", async () => {
+    await ensureProfile(NEW_USER, "America/Chicago");
     expect(await timezoneOf(NEW_USER)).toBe("America/Chicago");
   });
 });

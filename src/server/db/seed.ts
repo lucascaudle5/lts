@@ -166,10 +166,9 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
 }
 
 /**
- * On the local Supabase stack, makes Sam a confirmed Auth user with the seed's fixed id so a
- * magic-link sign-in as SAM_EMAIL lands on the seeded week. Plain Postgres (CI) has no `auth`
- * schema; then this is a no-op and returns false. Token columns must be '' rather than NULL for
- * Supabase Auth to load the user.
+ * On the local Supabase stack, makes Sam a confirmed Auth user with the seed's fixed id and a
+ * development-only password. Plain Postgres (CI) has no `auth` schema; then this is a no-op and
+ * returns false. Token columns must be '' rather than NULL for Supabase Auth to load the user.
  */
 export async function ensureSamAuthUser(db: Db): Promise<boolean> {
   const [{ exists }] = await db.execute<{ exists: boolean }>(
@@ -179,14 +178,15 @@ export async function ensureSamAuthUser(db: Db): Promise<boolean> {
   await db.transaction(async (tx) => {
     await tx.execute(sql`
       insert into auth.users (
-        instance_id, id, aud, role, email, email_confirmed_at,
+        instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
         raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
         confirmation_token, recovery_token, email_change_token_new, email_change
       ) values (
         '00000000-0000-0000-0000-000000000000', ${SAM_USER_ID}, 'authenticated', 'authenticated',
-        ${SAM_EMAIL}, now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+        ${SAM_EMAIL}, extensions.crypt('sam-local-password', extensions.gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}', '{}', now(), now(),
         '', '', '', ''
-      ) on conflict (id) do nothing`);
+      ) on conflict (id) do update set encrypted_password = excluded.encrypted_password`);
     await tx.execute(sql`
       insert into auth.identities (
         provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
@@ -219,7 +219,7 @@ async function main() {
     );
     console.log(
       canSignIn
-        ? `Sign in at /sign-in as ${SAM_EMAIL}; the link arrives in Mailpit (http://127.0.0.1:54324).`
+        ? `Sign in at /sign-in as ${SAM_EMAIL} with the local development password sam-local-password.`
         : "No Supabase Auth schema here, so Sam has no login (fine for CI and plain Postgres).",
     );
   } finally {

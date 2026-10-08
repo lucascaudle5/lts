@@ -16,8 +16,8 @@ both paths: AI/parser proposal → approval → mutation layer, and manual edit/
 
 ## User flow
 
-1. **Sign in** — `/sign-in`, enter email, click the magic link → `/today`. The first sign-in creates
-   the profile with the browser timezone.
+1. **Sign in** — `/sign-in`, enter email and password → `/today`. The first sign-in creates the
+   profile with the browser timezone.
 2. **Today** — a capture box ("What's going on?") at the top, today's timeline, the next 7 days,
    open tasks, and today's self-reports.
 3. **Capture** — type the messy sentence and press Enter. A `captures` row is stored and the user
@@ -149,7 +149,7 @@ approves.
 
 | Screen          | Content                                                                                                                                                                                                                                          | Empty / loading / error                                                                                                                                                                                                                  |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign-in         | Email field, "Send link", sent confirmation                                                                                                                                                                                                      | Invalid email inline; link expired → resend                                                                                                                                                                                              |
+| Sign-in         | Email and password fields, forgot-password recovery path                                                                                                                                                                                         | Invalid credentials shown without account enumeration; recovery email only on explicit request                                                                                                                                           |
 | Today           | Capture box; today's timeline (fixed blocks visually solid); Upcoming 7 days; Open tasks; "You said today" list                                                                                                                                  | Empty: "Nothing planned yet. Say what's going on." Loading: skeleton rows. Error: retry banner, capture box still usable                                                                                                                 |
 | Proposal review | Source text once at top; groups; item cards with diff row, assumption chips, slot inputs; per-item Approve / Edit / Reject; sticky "Approve N ready"; provenance footer ("Interpreted by `<model>` · `interpret@1`" or "Interpreted without AI") | Loading: "Reading your note…" with cancel. Nothing found: "I couldn't turn that into changes. Save it as a task?" Provider failure: parser result + banner. Approval failure: items marked failed with a reason, nothing partially saved |
 
