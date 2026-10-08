@@ -7,7 +7,7 @@ approved changes reach your Today view, and every change records where it came f
 **AI interprets and proposes. The user governs.** The rules behind that sentence are in
 [`docs/PRODUCT_CONSTITUTION.md`](docs/PRODUCT_CONSTITUTION.md).
 
-> Status: **M2 — sign-in and read-only Today.** Email magic-link sign-in (Supabase Auth), an app
+> Status: **M2 — sign-in and read-only Today.** Email/password sign-in (Supabase Auth), an app
 > shell, and a Today screen that reads your schedule, upcoming week, open tasks, and today's
 > self-reports from the database. Nothing can be created or edited in the app yet: the capture →
 > approval loop arrives in M3, AI in M4. See the milestone table in
@@ -26,16 +26,15 @@ pnpm db:seed                 # fictional user "Sam" with a week of data
 pnpm dev                     # http://localhost:4317
 ```
 
-Then sign in as Sam:
+Then sign in as Sam with the local development password `sam-local-password`:
 
-1. Open <http://localhost:4317>, enter `sam@example.com`, press **Send link**.
-2. Open Mailpit at <http://127.0.0.1:54324> (the local stack catches every email; nothing is sent)
-   and click the link **in the same browser**. You land on Today with Sam's week.
+1. Open <http://localhost:4317> and enter `sam@example.com` and `sam-local-password`.
+2. You'll land on Today with Sam's week. The local seed resets this fictional account's password
+   each time it runs; never use that password outside local development.
 
-Any other address also works locally: it creates a new, empty account whose timezone is your
-browser's. The `.env.example` defaults match the local stack, including its fixed publishable key.
-Open the app at `http://localhost:4317` (not `127.0.0.1`): magic links return to
-`NEXT_PUBLIC_SITE_URL`, and the sign-in cookie is per host.
+The sign-in form accepts existing accounts only. For a fresh local account, create one in Supabase
+Studio first. The `.env.example` defaults match the local stack, including its fixed publishable key.
+Open the app at `http://localhost:4317` (not `127.0.0.1`); the sign-in cookie is per host.
 
 ### Database
 
@@ -94,7 +93,7 @@ db/migrations/      SQL migrations generated from the Drizzle schema
 docs/               Constitution, playbook, architecture, ADRs, interim backlog
 supabase/           Local Supabase stack config (supabase start)
 src/proxy.ts        Refreshes the Supabase session cookie; sends signed-out users to /sign-in
-src/app/            Next.js routes and layouts: (auth)/sign-in, auth/confirm, today, api/health
+src/app/            Next.js routes and layouts: sign-in, password recovery, today, api/health
 src/components/     LTS components (auth, shell, today); ui/ holds shadcn/ui primitives
 src/contracts/      zod schemas: domain commands, proposals, tool I/O, Today view, sign-in
 src/domain/         Pure rules: dates/times, slots, validation, conflicts, safety

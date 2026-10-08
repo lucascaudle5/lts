@@ -20,7 +20,7 @@ AI-generated mutations additionally require proposal approval.
 | UI                 | Tailwind + shadcn/ui                                                                           | Accessible primitives, no design-system project                                                                                                                                      |
 | Database           | **PostgreSQL on Supabase**                                                                     | Relational data plus atomic multi-table approval and SQL for Review. Free tier, and a local stack via the Supabase CLI                                                               |
 | Schema/migrations  | Drizzle ORM → SQL files in `db/migrations/`                                                    | Schema in TypeScript, plain SQL migrations, works on plain Postgres in CI                                                                                                            |
-| Auth               | Supabase Auth, email magic link                                                                | Comes with the DB; nothing extra to run                                                                                                                                              |
+| Auth               | Supabase Auth, email and password                                                              | Comes with the DB; routine sign-in does not depend on email delivery                                                                                                                 |
 | Validation         | zod in `src/contracts/`                                                                        | One schema for forms, Server Actions, model output, and tool arguments                                                                                                               |
 | AI                 | Own harness; one **Vercel AI Gateway** adapter (via the AI SDK) + an offline **mock** provider | One gateway reaches many models by changing `LTS_AI_MODEL`. It uses an API key locally and OIDC on Vercel, so production stores no model key. Tests and CI need no key               |
 | Dates              | date-fns + @date-fns/tz, user timezone in profile                                              | Fixes the legacy UTC/local split                                                                                                                                                     |
@@ -125,7 +125,7 @@ proposal item → harness run + capture, so "where did this come from?" always h
 
 ## Auth
 
-Supabase magic link. The Next.js proxy refreshes the session, and `requireUser()` runs in every
+Supabase email/password credentials. The Next.js proxy refreshes the session, and `requireUser()` runs in every
 action. The first sign-in creates the profile with the browser timezone. The app is single-user in
 practice and multi-tenant-conscious (see Data model).
 

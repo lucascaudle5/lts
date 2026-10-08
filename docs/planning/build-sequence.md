@@ -40,7 +40,7 @@ that milestone.
 - **Files:** `src/app/(auth)/sign-in/`, `src/app/today/`, Next.js proxy for session refresh,
   `src/server/auth.ts` (`requireUser`, profile bootstrap), `src/server/repositories/{blocks,tasks,observations}.ts`,
   `src/components/today/*`, `src/app/api/health/route.ts`.
-- **Definition of done:** magic-link sign-in works locally; Today renders blocks, upcoming, tasks, and
+- **Definition of done:** email/password sign-in works locally; Today renders blocks, upcoming, tasks, and
   observations from the DB, with empty/loading/error states, on 375 px and desktop; signed-out users
   are redirected.
 - **Tests:** repository user-scoping (user B sees nothing of user A); Today view-model builder;

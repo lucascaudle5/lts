@@ -35,7 +35,7 @@ Vercel AI Gateway (or offline mock) ◄── harness only
 | App        | Next.js (App Router) + React + TypeScript, single package                   | One deployable holds UI, server logic, and AI secrets ([0003](adr/0003-framework-nextjs-single-app.md), [0008](adr/0008-single-package-not-monorepo.md)) |
 | UI         | Tailwind CSS + shadcn/ui                                                    | Accessible primitives without a design-system project                                                                                                    |
 | Database   | PostgreSQL on Supabase; schema + migrations with Drizzle                    | Relational, transactional, free tier, local stack ([0004](adr/0004-postgres-on-supabase.md))                                                             |
-| Auth       | Supabase Auth (email magic link), sessions via `@supabase/ssr`              | Comes with the database; no extra service                                                                                                                |
+| Auth       | Supabase Auth (email + password), sessions via `@supabase/ssr`              | Routine sign-in does not depend on email delivery; see ADR 0009                                                                                          |
 | Validation | zod schemas in `src/contracts` used by UI, server, and AI output            | One definition of every shape                                                                                                                            |
 | AI         | Own harness; one Vercel AI Gateway adapter (AI SDK) + offline mock provider | One key/OIDC for many models, provider-independent, testable without a key ([0005](adr/0005-ai-tools-not-raw-db-access.md))                              |
 | Dates      | `date-fns` + `@date-fns/tz`, user timezone stored in profile                | Fixes the legacy UTC/local split                                                                                                                         |
@@ -304,23 +304,23 @@ the model id, and when it was approved.
 
 ## Auth
 
-- Supabase Auth email magic link; local dev uses the Supabase CLI's mail catcher.
-- The link returns to `/auth/confirm`, which accepts the default PKCE `code` (must be opened in the
-  browser that asked for it) or a `token_hash` email template (any browser).
+- Supabase Auth email and password; routine sign-in sends no email. Password reset links are sent
+  only when the user explicitly requests account recovery. Local development can receive those
+  recovery emails in the Supabase CLI's mail catcher.
 - Next.js proxy (`src/proxy.ts`) refreshes the session and sends signed-out requests to `/sign-in`
   (default deny; only `/sign-in`, `/auth/*`, and `/api/health` are public). `requireUser()` in every
   protected page, Server Action, and Route Handler verifies the session again.
-- First sign-in creates the `profiles` row with the browser's timezone (carried in the link; UTC if
-  missing) and never overwrites an existing one. This bootstrap is account provisioning and writes
-  directly; later changes to profile settings go through the mutation layer like any domain write.
-- Allowed redirect URLs: localhost, the production URL, and the Vercel preview pattern (see the
-  playbook's deployment section).
+- First sign-in creates the `profiles` row with the browser's timezone (UTC if missing) and never
+  overwrites an existing one. This bootstrap is account provisioning and writes directly; later
+  changes to profile settings go through the mutation layer like any domain write.
+- Password reset returns through `/auth/confirm` using Supabase's PKCE exchange. Add the production
+  URL and any preview URLs to Supabase's redirect allow-list.
 
 ## Frontend
 
 | Route            | Screen                                                                             | Milestone |
 | ---------------- | ---------------------------------------------------------------------------------- | --------- |
-| `/sign-in`       | Email field → magic link                                                           | M2        |
+| `/sign-in`       | Email and password form                                                            | M2        |
 | `/today`         | Capture box on top; today's blocks (timeline), due/open tasks, latest self-reports | M2–M3     |
 | `/captures/[id]` | Proposal review: grouped items, slots as chips, diff, approve/edit/reject          | M3        |
 | `/history`       | Change log with provenance and Undo                                                | M5        |
