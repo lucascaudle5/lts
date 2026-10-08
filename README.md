@@ -121,6 +121,8 @@ them (`eslint.config.mjs`, tested in `src/import-boundaries.test.ts`).
 - [Architecture](docs/ARCHITECTURE.md) — boundaries, data model, AI harness, approval flow
 - [Development playbook](docs/DEVELOPMENT_PLAYBOOK.md) — milestones, workflow, tests, migrations, releases
 - [Architecture decision records](docs/adr/README.md)
+- [Module parity](docs/MODULE_PARITY.md) — what each room did historically, what it does now, what is next
+- [History](docs/history/) — conversation-derived product intent behind the rooms
 
 ## Where work is tracked
 

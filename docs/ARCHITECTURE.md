@@ -4,8 +4,11 @@ Status: accepted for v1. Changes need a demonstrated limitation (Constitution, A
 ADR. From M1 on, the stack-lock rule in `DEVELOPMENT_PLAYBOOK.md` applies.
 
 **Core invariant:** all consequential domain mutations go through the same audited mutation layer.
-An authority check routes explicit low-risk commands the user has allowed to a direct mutation;
-interpretive or high-impact actions remain proposals that require confirmation.
+An authority check routes explicit low-risk commands that are on the allowlist and that the user has
+granted authority for to a direct mutation; everything else (interpretive, sensitive, destructive,
+bulk, ambiguous, or high-impact) remains a proposal that requires confirmation. A direct execution
+is logged with provenance, shows in History, and is undoable. See Constitution Amendment 4 and
+[ADR 0011](adr/0011-constitution-amendments-2026-10-08.md).
 
 ## Shape in one picture
 
@@ -48,16 +51,17 @@ Vercel AI Gateway (or offline mock) ◄── harness only
 
 Directories appear when the milestone that needs them starts (see `README.md` for the current tree).
 
-| Path                    | Owns                                                                                                  | May import                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `src/contracts/`        | zod schemas + inferred types: domain commands, proposal envelopes, tool I/O, provider capabilities    | `zod` only                                   |
-| `src/domain/`           | Pure rules: date/time resolution, validation, missing slots, conflicts, safety stop, routine variants | `contracts`, `date-fns`                      |
-| `src/ai/`               | Harness loop, provider adapters, tool definitions, prompts, eval fixtures                             | `contracts`, `domain`, `server/tools`        |
-| `src/server/mutations/` | The domain mutation layer (`runMutations`) — the only caller of repository write helpers              | `contracts`, `domain`, `server/repositories` |
-| `src/server/`           | DB schema, repositories, approval, auth helpers, tool implementations (`import "server-only"`)        | everything except `app`, `components`        |
-| `src/app/`              | Routes, layouts, Server Actions (thin: parse input → call server → return)                            | `server`, `contracts`, `components`          |
-| `src/components/`       | UI; `ui/` is shadcn primitives, the rest are LTS components                                           | `contracts` (types), `lib`                   |
-| `db/migrations/`        | Generated SQL migrations                                                                              | —                                            |
+| Path                    | Owns                                                                                                  | May import                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `src/contracts/`        | zod schemas + inferred types: domain commands, proposal envelopes, tool I/O, provider capabilities    | `zod` only                                    |
+| `src/domain/`           | Pure rules: date/time resolution, validation, missing slots, conflicts, safety stop, routine variants | `contracts`, `date-fns`                       |
+| `src/ai/`               | Harness loop, provider adapters, tool definitions, prompts, eval fixtures                             | `contracts`, `domain`, `server/tools`         |
+| `src/server/mutations/` | The domain mutation layer (`runMutations`) — the only caller of repository write helpers              | `contracts`, `domain`, `server/repositories`  |
+| `src/server/`           | DB schema, repositories, approval, auth helpers, tool implementations (`import "server-only"`)        | everything except `app`, `components`         |
+| `src/app/`              | Routes, layouts, Server Actions (thin: parse input → call server → return)                            | `server`, `contracts`, `components`           |
+| `src/components/`       | UI; `ui/` is shadcn primitives, the rest are LTS components                                           | `contracts` (types), `lib`                    |
+| `src/modules/<room>/`   | Planned, built per room as it is touched (see "Room modules and signals")                             | `contracts`, `domain`, `server` (via queries) |
+| `db/migrations/`        | Generated SQL migrations                                                                              | —                                             |
 
 `domain` and `contracts` stay pure (no I/O) so the compiler can be unit-tested exhaustively. ESLint
 `no-restricted-imports` enforces the table from M1 onward, including "only `src/server/mutations/**`
@@ -162,9 +166,13 @@ Internal metaphor; the UI just says "Here's what I'd change."
    duplicates of open tasks → warnings or missing slots.
 7. **Missing slots** — required fields still empty become slots the UI renders as chips/inputs.
    Status is `ready` only when no slots remain.
-8. **Authority and risk** — explicit low-risk commands may execute directly only when the user's
-   setting allows them. Interpretive suggestions, sensitive changes, and high-impact actions remain
-   proposals for confirmation.
+8. **Authority and risk** — explicit low-risk commands may execute directly only when the command is
+   on the allowlist and the user's setting grants that authority. The allowlist starts narrow (add a
+   task, add a grocery item, log a clearly stated entry); today only `Add task: …` is wired
+   (`applyAllowedExplicitTask`, setting `ai_authority = allow_explicit`). Health or sensitive data,
+   deletions and archives, anything inferred or ambiguous, and bulk changes never execute directly.
+   Interpretive suggestions, sensitive changes, and high-impact actions remain proposals for
+   confirmation.
 9. **Mutation** — direct commands and confirmed proposals become typed commands and run through the
    mutation layer (below). Today re-renders from the database, not from an uncommitted proposal.
 
@@ -178,6 +186,11 @@ writes. Two paths use it:
 | AI / parser     | `approveItems` (after the user approves proposal items) | `{ userId, actor: "user", origin: "proposal", proposalItemIds }` | Items must be `ready` and approved |
 | Manual (Art. 6) | Server Actions for direct create/edit/delete, Undo (M5) | `{ userId, actor: "user", origin: "manual" \| "undo" }`          | None beyond the layer's own checks |
 | Automation      | Only a deliberately configured automation (none in v1)  | `{ userId, actor: "automation", automationId }`                  | Automation enabled by the user     |
+
+A direct, allowlisted AI execution (step 8) uses the same layer and must record that it was executed
+directly under the user's granted authority, so History can tell it from a confirmed proposal. How
+that is recorded (a distinct `origin` value or a field on the change) is decided when Settings
+authority is built; the requirement is provenance, a `change_log` row, and an undo path.
 
 For every call, inside **one Postgres transaction**:
 
@@ -363,6 +376,46 @@ M1 (Postgres service container); Playwright joins in M5.
 - Post-deploy check: `/api/health` returns version + DB reachability (M2); manual smoke of the slice.
 - Step-by-step guide: the playbook's "Hosting setup" section.
 
+## Room modules and signals
+
+Added by [ADR 0012](adr/0012-room-modules-and-signals.md). This is an addition to the stack-lock
+regime, not a stack change: Next.js, Supabase, Drizzle, and the proposal/mutation architecture are
+unchanged.
+
+**Goal.** Working on a room should make it more independently removable. Each room that is touched
+is gradually extracted from `src/app/(life)/LifeWorkspace.tsx` into a module folder, for example
+`src/modules/<room>/` with `contracts`, `domain`, `signals`, `queries`, `mutations`, `components`,
+and `tests`. The shape is guidance, not mandatory. Do not move a room that nobody is working on.
+
+**Signals are a typed derived view.** A module exports functions such as `getHabitSignals(data,
+context)` and `getTaskSignals(...)` that read data and return typed signals. They are not an event
+bus, not pub/sub, and not stored events: they are recomputed on read from recorded facts, cite the
+records behind them, and are never stored as observations (ADR 0006).
+
+| Signal vocabulary   | Meaning (a room asks; it never writes)               |
+| ------------------- | ---------------------------------------------------- |
+| `needs_time`        | wants time on the schedule                           |
+| `needs_attention`   | should surface on Today                              |
+| `needs_protection`  | a window or floor item should be protected           |
+| `needs_recovery`    | a smaller or gentler next step should be offered     |
+| `overdue`           | past its date (internal name; copy follows Art. 4)   |
+| `conflict`          | collides with another commitment                     |
+| `capacity_warning`  | the load looks heavier than the user said they carry |
+| `upcoming_deadline` | a date is approaching                                |
+| `routine_candidate` | a repeated action could become a routine             |
+| `review_candidate`  | a pattern worth a decision in Review                 |
+
+**Topology.** Schedule owns time. Today owns execution. Review owns governance. History owns the
+factual record. Archive owns inactive state. Settings owns constraints and permissions. NOVA
+interprets and acts only within the authority Settings grants. Capture owns messy input. Sandbox owns
+hypothetical state. Rooms own their domain data and emit signals upward.
+
+**Rules.** Disabling a module hides it and stops its signals but keeps its data. No hidden coupling:
+a module never silently mutates another module's state; a change in another module is a visible
+mutation through `runMutations`. Modules reach each other only through exported signal functions and
+contracts. The ESLint import rules are extended when the first module is extracted. The first signals
+contract is built with Habits; `docs/MODULE_PARITY.md` tracks status per room.
+
 ## What came from the legacy build
 
 The v2.9.7 static build (see `LEGACY.md`) contributed concepts, not code:
@@ -382,7 +435,8 @@ The v2.9.7 static build (see `LEGACY.md`) contributed concepts, not code:
 
 Dropped on purpose: localStorage as the source of truth, 49 version-key migrations, string-HTML
 rendering, free-text-matching decision application, season/day-mode personality taxonomies, and the
-stabilization percentage score.
+stabilization percentage score. Streaks are not in that list: they are allowed as factual continuity
+metrics with the semantics in Constitution Amendment 2 (no data is not a miss, local date keys).
 
 ## Complete workspace candidate
 
@@ -392,3 +446,5 @@ overrides enter runMutations. A per-user advisory transaction lock serializes da
 recurring bill payments. Archived records stay in exports/History and are excluded from operational
 views and bounded AI tools. The `(life)/[room]` route hosts additional rooms. Review uses deterministic
 evidence and user decisions, not model-derived mental-state inferences.
+These rooms currently live together in `LifeWorkspace.tsx`; they move into module folders as each is
+worked on (above).

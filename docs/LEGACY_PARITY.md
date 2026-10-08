@@ -27,12 +27,16 @@ All saved domain changes use the existing validated, user-scoped, audited mutati
 - Review is a deterministic evidence summary with user decisions. Model-generated Review
   inferences and conversational history Q&A are not implemented yet.
 - Direct authority supports an explicit `Add task: …` command. Other captures remain proposals.
+  The allowlist, Settings controls and per-change undo for wider direct execution are described in
+  Constitution Amendment 4 and are not built.
   Major rewrites and bulk archive/import require explicit confirmation.
 - Sandbox changes disappear on refresh. Export preserves a dry run; it does not alter the account.
 - JSON import creates new domain records and remaps references, up to 500 records per import.
   Capture/proposal/audit history and profile settings are exported but are not replayed on import.
-- This preserves practical behavior without invented modes, feeling scores, diagnoses, assumed body
-  metrics, or free-text mutation rules.
+- This preserves practical behavior without invented modes, inferred scores, diagnoses, assumed body
+  metrics, or free-text mutation rules. Streaks and labeled self-reported scales are allowed by the
+  2026-10-08 amendments but are not built yet. `docs/MODULE_PARITY.md` tracks what is missing per
+  room.
 
 ## Legacy evidence
 
