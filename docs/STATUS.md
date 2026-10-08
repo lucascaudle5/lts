@@ -24,6 +24,13 @@ accepting an optional `theme`. Verified here: `pnpm check` (405 unit tests inclu
 Tasks, Review, History still use the old layouts with the new tokens), the sign-in redesign, and
 the optional time-of-day tint beyond Today.
 
+## Docs aligned to Lucas's decisions
+
+On 2026-10-08 the constitution gained dated amendments ([ADR 0011](adr/0011-constitution-amendments-2026-10-08.md)),
+modules and signals were recorded in [ADR 0012](adr/0012-room-modules-and-signals.md), and
+[MODULE_PARITY.md](MODULE_PARITY.md) now lists every room's historical intent, current behavior and
+next target. Docs only; no app code changed. **Habits is next**, and it builds the signals contract.
+
 ## Checks already completed
 
 Before Lucas asked to stop testing and open the PR:
