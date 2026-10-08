@@ -8,7 +8,7 @@ labels: bug
 
 **What should have happened**
 
-**Did any state change without approval?** yes / no
+**Did any state change without approval or an allowlisted direct command you had enabled?** yes / no
 <!-- "yes" makes this a constitution violation (Article 9) and the top priority. -->
 
 **Steps / commit / environment**

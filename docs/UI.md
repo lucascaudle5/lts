@@ -10,9 +10,18 @@ A warm desk instrument: paper, ink and a single gold lamp. Calm, specific, never
 Serif headings (`Georgia`, no font download), Geist for body and forms, Geist Mono for eyebrows,
 times and anchors.
 
-Never: streaks, scores, points, red "miss" badges, guilt copy, or a count paired with something
-negative. Misses carry a path ("Do the small version", "Not today", the minimum is always visible).
-Red is for destructive actions only. A heavy day gets quieter, not louder.
+Never: red "miss" badges, guilt copy, points, composite life scores, or a count paired with
+something negative. Streaks are allowed as plain continuity facts under Constitution Amendment 2
+("5 days in a row", "best: 12"), never as a score and never with loss language. A due day with no
+entry reads as a neutral "no data", not a miss; an intentional skip is not a break. Misses carry a
+path ("Do the small version", "Not today", the minimum is always visible). A number the user
+reports about themselves is shown with a label that says it is subjective and self-reported. Red is
+for destructive actions only. A heavy day gets quieter, not louder.
+
+No streak display exists in the app yet; the first one arrives with Habits
+([MODULE_PARITY.md](MODULE_PARITY.md)). The copy guardrail tests in `components/today` and
+`components/life` currently match the word "streak"; they change to check for guilt copy and red
+miss styling when that room is built.
 
 ## Themes
 

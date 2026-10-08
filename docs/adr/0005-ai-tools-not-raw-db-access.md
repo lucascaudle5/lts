@@ -1,6 +1,6 @@
 # 0005. AI uses bounded tools and proposals; all domain writes go through one mutation layer
 
-Status: Accepted (revised 2026-10-07 after review: mutation layer, AI Gateway, trace retention)
+Status: Accepted (revised 2026-10-07 after review: mutation layer, AI Gateway, trace retention; invariant reworded 2026-10-08 by [ADR 0011](0011-constitution-amendments-2026-10-08.md))
 Date: 2026-10-07
 
 ## Context
@@ -19,7 +19,14 @@ depending on who made the change.
   records `change_log` and provenance, and does it all in one transaction. Both paths use it:
   AI/parser proposal → user approval → mutation layer, and direct manual action → mutation layer.
 - **Invariant:** all consequential domain mutations go through the same audited mutation layer.
-  AI-generated mutations additionally require proposal approval.
+  AI-originated mutations either run directly, only when the command is on the user-configured
+  allowlist of explicit low-risk commands and the user has granted that authority in Settings, or
+  require proposal approval. Everything else (sensitive or health data, deletions and archives,
+  inferred or ambiguous changes, bulk changes) requires proposal approval. A direct execution is
+  validated, logged with provenance, shown in History, and undoable like any other change
+  (Constitution, Amendment 4).
+  _Before 2026-10-08 this line read: "AI-generated mutations additionally require proposal
+  approval."_
 - **Bounded tools.** The harness exposes a small allowlist of typed read tools implemented by LTS,
   scoped to the current user, with row/time limits and sensitivity gates. No SQL, no generic query
   tool. The model returns changes only through `submit_proposals`, validated by the same zod

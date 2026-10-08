@@ -57,7 +57,12 @@ merged). Commit messages: imperative, specific (`Add mutation layer with change_
 - Name things after the product (`approveItems`, `resolveWeekday`), not after patterns (`Manager`,
   `Helper`).
 - Comments explain constraints the code cannot show; don't narrate.
-- UI copy follows Article 4: no guilt, no streak-loss language, no fake precision.
+- UI copy follows Article 4: no guilt, no red miss badges, no streak-loss language, no fake
+  precision. Streaks are allowed as factual continuity metrics (Amendment 2).
+- Date keys are local: use the user's timezone helpers in `src/domain/dates.ts`, never
+  `toISOString().slice(0, 10)`.
+- Room code is extracted from `LifeWorkspace.tsx` into `src/modules/<room>/` as the room is touched
+  ([ADR 0012](adr/0012-room-modules-and-signals.md)). Signals are typed derived functions, not events.
 
 ## Tests
 
