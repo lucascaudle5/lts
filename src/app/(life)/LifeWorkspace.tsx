@@ -2952,12 +2952,14 @@ export function Sandbox({ data }: { data: WorkspaceData }) {
   const seed = (): WorkspaceData => {
     const habitId = "10000000-0000-4000-8000-000000000001";
     const routineId = "10000000-0000-4000-8000-000000000002";
+    // Fixed fictional clock. `new Date()` here runs while `/demo` prerenders.
+    const stampedAt = `${data.today}T12:00:00.000Z`;
     const row = (id: string, record: LifeRecord): LifeRow => ({
       id,
       data: record,
       archivedAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: stampedAt,
+      updatedAt: stampedAt,
     });
     return {
       today: data.today,
@@ -2977,7 +2979,7 @@ export function Sandbox({ data }: { data: WorkspaceData }) {
           fixed: true,
           seriesId: null,
           archivedAt: null,
-          updatedAt: new Date().toISOString(),
+          updatedAt: stampedAt,
         },
       ],
       tasks: [
