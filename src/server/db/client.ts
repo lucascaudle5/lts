@@ -8,6 +8,8 @@ import { requireEnv } from "./env";
 import * as schema from "./schema";
 
 export type Db = ReturnType<typeof createDb>;
+export type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type DbExecutor = Db | DbTransaction;
 
 /**
  * Prepared statements stay off because production uses Supabase's transaction-mode pooler, and

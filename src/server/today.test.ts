@@ -139,6 +139,7 @@ describe("buildTodayView", () => {
         id: "00000000-0000-4000-a000-000000000002",
         category: "energy",
         valueText: "pretty tired after lab",
+        provenance: null,
       },
     ]);
   });

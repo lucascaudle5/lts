@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { BlockRow } from "./BlockRow";
 import { OBSERVATION_CATEGORY_LABEL, TASK_KIND_LABEL } from "./labels";
+import { ProvenanceLink } from "./ProvenanceLink";
 import { EmptyLine, Section } from "./Section";
 
 export function TodayHeader({ dateLabel, timezone }: { dateLabel: string; timezone: string }) {
@@ -58,6 +59,7 @@ export function TodayView({ view }: { view: TodayViewModel }) {
                         {OBSERVATION_CATEGORY_LABEL[o.category]}
                       </p>
                       <p className="mt-0.5">&ldquo;{o.valueText}&rdquo;</p>
+                      <ProvenanceLink provenance={o.provenance} />
                     </li>
                   ))}
                 </ul>
@@ -78,6 +80,7 @@ export function TodayView({ view }: { view: TodayViewModel }) {
                     <li key={task.id} className="flex items-start justify-between gap-3 px-4 py-3">
                       <div className="min-w-0 space-y-0.5">
                         <p className="leading-snug font-medium break-words">{task.title}</p>
+                        <ProvenanceLink provenance={task.provenance} />
                         <p className="text-xs text-muted-foreground">
                           {TASK_KIND_LABEL[task.taskKind]}
                         </p>

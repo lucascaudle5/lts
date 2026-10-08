@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { BlockKind, HhMm, IsoDate, ObservationCategory, TaskKind, Timezone, Uuid } from "./common";
 
+const ProvenanceLink = z.object({ captureId: Uuid, referenceDate: IsoDate }).nullable();
+
 /** Days after today that Today's "Upcoming" section covers. */
 export const UPCOMING_DAYS = 7;
 
@@ -17,6 +19,7 @@ export const TodayBlock = z.object({
   fixed: z.boolean(),
   /** Relative to the `now` the view was built for; only meaningful for today's blocks. */
   timing: z.enum(["past", "now", "later"]),
+  provenance: ProvenanceLink,
 });
 export type TodayBlock = z.infer<typeof TodayBlock>;
 
@@ -38,6 +41,7 @@ export const TodayTask = z.object({
   dueToday: z.boolean(),
   /** The due date has passed; shown plainly, never as a warning (Article 4). */
   pastDue: z.boolean(),
+  provenance: ProvenanceLink,
 });
 export type TodayTask = z.infer<typeof TodayTask>;
 
@@ -46,6 +50,7 @@ export const TodayObservation = z.object({
   category: ObservationCategory,
   /** The user's own words. */
   valueText: z.string(),
+  provenance: ProvenanceLink,
 });
 export type TodayObservation = z.infer<typeof TodayObservation>;
 

@@ -2,13 +2,20 @@ import "server-only";
 
 import { and, asc, eq, gte, isNull, lt } from "drizzle-orm";
 
+import type { IsoDate } from "@/contracts/common";
 import { getDb, type Db } from "@/server/db/client";
-import { scheduleBlocks } from "@/server/db/schema";
+import { captures, proposalItems, scheduleBlocks } from "@/server/db/schema";
 
-export type BlockRow = Pick<
-  typeof scheduleBlocks.$inferSelect,
-  "id" | "title" | "kind" | "startsAt" | "endsAt" | "fixed"
->;
+export interface BlockRow {
+  id: string;
+  title: string;
+  kind: typeof scheduleBlocks.$inferSelect.kind;
+  startsAt: Date;
+  endsAt: Date;
+  fixed: boolean;
+  captureId?: string | null;
+  captureDate?: IsoDate | null;
+}
 
 /** The user's live blocks starting in `[from, to)`, earliest first. */
 export async function listBlocksStartingBetween(
@@ -24,8 +31,15 @@ export async function listBlocksStartingBetween(
       startsAt: scheduleBlocks.startsAt,
       endsAt: scheduleBlocks.endsAt,
       fixed: scheduleBlocks.fixed,
+      captureId: captures.id,
+      captureDate: captures.referenceDate,
     })
     .from(scheduleBlocks)
+    .leftJoin(
+      proposalItems,
+      and(eq(scheduleBlocks.originItemId, proposalItems.id), eq(proposalItems.userId, userId)),
+    )
+    .leftJoin(captures, and(eq(proposalItems.captureId, captures.id), eq(captures.userId, userId)))
     .where(
       and(
         eq(scheduleBlocks.userId, userId),

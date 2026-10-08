@@ -58,6 +58,10 @@ function toTodayBlock(row: BlockRow, timezone: string, now: Date): TodayBlock {
     timeLabel: `${formatTime12h(start.time)} – ${formatTime12h(end.time)}${suffix}`,
     fixed: row.fixed,
     timing,
+    provenance:
+      row.captureId && row.captureDate
+        ? { captureId: row.captureId, referenceDate: row.captureDate }
+        : null,
   };
 }
 
@@ -72,6 +76,10 @@ function toTodayTask(row: TaskRow, today: IsoDate): TodayTask {
     dueLabel: dueOn === null ? null : dueToday ? "Due today" : `Due ${shortDate(dueOn)}`,
     dueToday,
     pastDue: dueOn !== null && daysBetween(today, dueOn) < 0,
+    provenance:
+      row.captureId && row.captureDate
+        ? { captureId: row.captureId, referenceDate: row.captureDate }
+        : null,
   };
 }
 
@@ -101,7 +109,15 @@ export function buildTodayView(input: TodayInput): TodayView {
   const openTasks = input.openTasks.map((row) => toTodayTask(row, date));
   const observations = input.observations
     .filter((row) => row.occurredOn === date)
-    .map((row) => ({ id: row.id, category: row.category, valueText: row.valueText }));
+    .map((row) => ({
+      id: row.id,
+      category: row.category,
+      valueText: row.valueText,
+      provenance:
+        row.captureId && row.captureDate
+          ? { captureId: row.captureId, referenceDate: row.captureDate }
+          : null,
+    }));
 
   return {
     date,

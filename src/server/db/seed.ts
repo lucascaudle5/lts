@@ -3,7 +3,14 @@ import { pathToFileURL } from "node:url";
 import { eq, sql } from "drizzle-orm";
 
 import type { HhMm, IsoDate } from "@/contracts/common";
-import { addDaysIso, localDateTimeToInstant, todayInTimezone, weekdayOf } from "@/domain/dates";
+import {
+  addDaysIso,
+  instantToLocal,
+  localDateTimeToInstant,
+  todayInTimezone,
+  weekdayOf,
+} from "@/domain/dates";
+import { runMutations, type MutationRequest } from "@/server/mutations/runMutations";
 
 import { createDb, type Db } from "./client";
 import { isLocalDatabaseUrl } from "./connection";
@@ -93,12 +100,62 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
     origin: "manual" as const,
   }));
 
+  const mutationCommands: Extract<MutationRequest, { origin: "manual" }>["commands"] = [
+    ...blockRows.map((row) => {
+      const start = instantToLocal(row.startsAt, SAM_TIMEZONE);
+      const end = instantToLocal(row.endsAt, SAM_TIMEZONE);
+      return {
+        command: {
+          kind: "schedule_block.create" as const,
+          payload: {
+            title: row.title,
+            blockKind: row.kind,
+            date: start.date,
+            start: start.time,
+            end: end.time,
+            fixed: row.fixed ?? false,
+          },
+        },
+      };
+    }),
+    ...taskRows.map((row) => ({
+      command: {
+        kind: "task.create" as const,
+        payload: {
+          title: row.title,
+          taskKind: row.kind,
+          ...(row.dueOn ? { dueOn: row.dueOn } : {}),
+          ...(row.notes ? { notes: row.notes } : {}),
+        },
+      },
+      taskStatus: row.status ?? "open",
+    })),
+    ...observationRows.map((row) => ({
+      command: {
+        kind: "observation.record" as const,
+        payload: {
+          category: row.category,
+          valueText: row.valueText,
+          ...(row.valueNum != null ? { valueNum: row.valueNum } : {}),
+          occurredOn: row.occurredOn,
+        },
+      },
+    })),
+  ];
+
   await db.transaction(async (tx) => {
     await tx.delete(profiles).where(eq(profiles.userId, SAM_USER_ID));
     await tx.insert(profiles).values({ userId: SAM_USER_ID, timezone: SAM_TIMEZONE });
-    await tx.insert(scheduleBlocks).values(blockRows);
-    await tx.insert(tasks).values(taskRows);
-    await tx.insert(observations).values(observationRows);
+    await runMutations(
+      SAM_USER_ID,
+      {
+        origin: "manual",
+        timezone: SAM_TIMEZONE,
+        actor: "automation",
+        commands: mutationCommands,
+      },
+      tx as unknown as Db,
+    );
   });
 
   return {
