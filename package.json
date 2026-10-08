@@ -1,6 +1,6 @@
 {
   "name": "lts",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Life Tracker Suite 1.0 — turns messy life input into approved, structured action.",
   "engines": {
