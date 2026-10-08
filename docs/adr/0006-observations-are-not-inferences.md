@@ -1,6 +1,6 @@
 # 0006. Observations and inferences are separate records
 
-Status: Accepted
+Status: Accepted (clarified 2026-10-08 by [ADR 0011](0011-constitution-amendments-2026-10-08.md))
 Date: 2026-10-07
 
 ## Context
@@ -23,3 +23,10 @@ converts an interpretation into a fact about Lucas's health.
 - Review and suggestions can always show their evidence.
 - Slightly more schema; the grounding check (quote must be in the capture) is cheap and
   deterministic.
+
+## Clarification (2026-10-08)
+
+A numeric scale the user fills in (mood, energy, stress, capacity) is an observation. It is
+stored with the user's number and labeled subjective and self-reported. This decision still forbids
+turning words into numbers, inferring a score or day mode from text, and presenting a self-reported
+number as objective truth or diagnosis (Constitution, Amendment 3).
