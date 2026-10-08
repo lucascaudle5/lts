@@ -7,9 +7,10 @@ approved changes reach your Today view, and every change records where it came f
 **AI interprets and proposes. The user governs.** The rules behind that sentence are in
 [`docs/PRODUCT_CONSTITUTION.md`](docs/PRODUCT_CONSTITUTION.md).
 
-> Status: **M1 — contracts and database.** Typed contracts, pure domain rules, the Postgres schema,
-> migrations, and a dev seed exist; the app still shows a placeholder page. Sign-in and Today arrive
-> in M2, the capture → approval loop in M3, AI in M4. See the milestone table in
+> Status: **M2 — sign-in and read-only Today.** Email magic-link sign-in (Supabase Auth), an app
+> shell, and a Today screen that reads your schedule, upcoming week, open tasks, and today's
+> self-reports from the database. Nothing can be created or edited in the app yet: the capture →
+> approval loop arrives in M3, AI in M4. See the milestone table in
 > [`docs/DEVELOPMENT_PLAYBOOK.md`](docs/DEVELOPMENT_PLAYBOOK.md#milestones).
 
 ## Run it locally
@@ -18,9 +19,23 @@ Requirements: Node 22+ and pnpm 10 (`corepack enable` provides pnpm).
 
 ```bash
 pnpm install
-cp .env.example .env.local   # the defaults point at the local Supabase stack
-pnpm dev                      # http://localhost:4317
+cp .env.example .env.local   # Windows: copy .env.example .env.local
+supabase start               # local Postgres + Auth + Mailpit (needs Docker)
+pnpm db:migrate
+pnpm db:seed                 # fictional user "Sam" with a week of data
+pnpm dev                     # http://localhost:4317
 ```
+
+Then sign in as Sam:
+
+1. Open <http://localhost:4317>, enter `sam@example.com`, press **Send link**.
+2. Open Mailpit at <http://127.0.0.1:54324> (the local stack catches every email; nothing is sent)
+   and click the link **in the same browser**. You land on Today with Sam's week.
+
+Any other address also works locally: it creates a new, empty account whose timezone is your
+browser's. The `.env.example` defaults match the local stack, including its fixed publishable key.
+Open the app at `http://localhost:4317` (not `127.0.0.1`): magic links return to
+`NEXT_PUBLIC_SITE_URL`, and the sign-in cookie is per host.
 
 ### Database
 
@@ -36,8 +51,12 @@ pnpm test:db       # DB integration tests (create and drop their own database)
 supabase stop      # when you're done
 ```
 
+- `db:migrate`, `db:seed`, and `test:db` read `.env.local` (then `.env`) from the repo root, also
+  when an editor saved it as UTF-16 or with a BOM. Variables already set in the shell win. The
+  local database URL is `postgresql://postgres:postgres@127.0.0.1:54322/postgres`.
 - The seed refuses to run unless `POSTGRES_URL_NON_POOLING` points at `localhost`/`127.0.0.1`. It is
-  idempotent: re-running it replaces Sam's rows.
+  idempotent: re-running it replaces Sam's rows. On the local Supabase stack it also makes Sam an
+  Auth user (`sam@example.com`); on plain Postgres it skips that step.
 - Without the Supabase CLI, any local Postgres 17 works for migrations, seed, and tests, e.g.
   `docker run -d -p 54322:5432 -e POSTGRES_PASSWORD=postgres postgres:17`. CI does exactly this
   with a service container.
@@ -60,6 +79,9 @@ supabase stop      # when you're done
 | `pnpm db:migrate`  | Apply migrations to `POSTGRES_URL_NON_POOLING`                   |
 | `pnpm db:seed`     | Seed the fictional user "Sam" (local databases only)             |
 
+`GET /api/health` returns `{ status, version, commit, db }` (HTTP 503 when the database is
+unreachable). It is public and contains no user data.
+
 CI (`.github/workflows/ci.yml`) runs two jobs on every PR and on `main`: `check` (the `pnpm check`
 steps plus `pnpm build`) and `db` (a Postgres 17 service container: schema/migration drift check,
 `db:migrate`, `db:seed` twice, `test:db`).
@@ -71,16 +93,19 @@ steps plus `pnpm build`) and `db` (a Postgres 17 service container: schema/migra
 db/migrations/      SQL migrations generated from the Drizzle schema
 docs/               Constitution, playbook, architecture, ADRs, interim backlog
 supabase/           Local Supabase stack config (supabase start)
-src/app/            Next.js routes and layouts
-src/components/ui/  shadcn/ui primitives
-src/contracts/      zod schemas: domain commands, proposals, tool I/O
+src/proxy.ts        Refreshes the Supabase session cookie; sends signed-out users to /sign-in
+src/app/            Next.js routes and layouts: (auth)/sign-in, auth/confirm, today, api/health
+src/components/     LTS components (auth, shell, today); ui/ holds shadcn/ui primitives
+src/contracts/      zod schemas: domain commands, proposals, tool I/O, Today view, sign-in
 src/domain/         Pure rules: dates/times, slots, validation, conflicts, safety
-src/server/db/      Drizzle schema, DB client, dev seed
+src/server/         auth.ts (requireUser, profile bootstrap), today.ts (Today view model), health
+src/server/repositories/  User-scoped reads; userId is always the first argument
+src/server/db/      Drizzle schema, DB client, dev seed, script env loading
 src/lib/            Small shared utilities
 LEGACY.md           Provenance of the old v2.9.7 static build (reference only, not in this repo)
 ```
 
-Later folders (`src/ai`, `src/server/repositories`, `src/server/mutations`, …) are created by the
+Later folders (`src/ai`, `src/server/mutations`, …) are created by the
 milestone that first needs them. Responsibilities and import rules are in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#source-layout-and-import-boundaries); ESLint enforces
 them (`eslint.config.mjs`, tested in `src/import-boundaries.test.ts`).

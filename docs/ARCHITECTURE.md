@@ -305,8 +305,14 @@ the model id, and when it was approved.
 ## Auth
 
 - Supabase Auth email magic link; local dev uses the Supabase CLI's mail catcher.
-- Next.js proxy refreshes the session; `requireUser()` in every Server Action and Route Handler.
-- First sign-in creates the `profiles` row with the browser's timezone.
+- The link returns to `/auth/confirm`, which accepts the default PKCE `code` (must be opened in the
+  browser that asked for it) or a `token_hash` email template (any browser).
+- Next.js proxy (`src/proxy.ts`) refreshes the session and sends signed-out requests to `/sign-in`
+  (default deny; only `/sign-in`, `/auth/*`, and `/api/health` are public). `requireUser()` in every
+  protected page, Server Action, and Route Handler verifies the session again.
+- First sign-in creates the `profiles` row with the browser's timezone (carried in the link; UTC if
+  missing) and never overwrites an existing one. This bootstrap is account provisioning and writes
+  directly; later changes to profile settings go through the mutation layer like any domain write.
 - Allowed redirect URLs: localhost, the production URL, and the Vercel preview pattern (see the
   playbook's deployment section).
 
