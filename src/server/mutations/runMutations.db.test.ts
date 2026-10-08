@@ -156,7 +156,11 @@ describe("M3 capture and approval loop", () => {
 
     await expect(
       runMutations(A, { origin: "proposal", itemIds: [first.itemId, second.itemId] }, db),
-    ).rejects.toThrow("injected audit failure");
+    ).rejects.toMatchObject({
+      cause: expect.objectContaining({
+        message: expect.stringContaining("injected audit failure"),
+      }),
+    });
     await db.execute(sql.raw("drop trigger fail_selected_change_log on change_log;"));
     await db.execute(sql.raw("drop function fail_selected_change_log();"));
     await expect(db.select().from(tasks).where(eq(tasks.userId, A))).resolves.toEqual([]);
