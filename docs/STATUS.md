@@ -1,6 +1,6 @@
 # Status
 
-Last updated 2026-10-08.
+Last updated 2026-10-08 (design batch 1).
 
 ## Current delivery
 
@@ -12,6 +12,17 @@ See [LEGACY_PARITY.md](LEGACY_PARITY.md) for features and explicit boundaries an
 
 M0–M3 are merged; Production is still the M3/password sign-in release. This candidate adds manual
 tracking across the parity sprints while preserving existing auth, proposals, mutations and audit.
+
+## Design batch 1
+
+The `design-batch-1` branch applies the first design pass (see [UI.md](UI.md)): three themes
+(Sandstone default, Blueprint, Dark) stored on the account in `profiles.theme` with a pre-paint
+cache, the rail shell with an active-room nav and a quick switch, a Settings Appearance card, Today
+as one hierarchy (Up next, the floor, gentle heavy-day and done-day states), Routines as the
+exemplar room, and a polished capture review. No new product behavior beyond `profile.save`
+accepting an optional `theme`. Verified here: `pnpm check` (405 unit tests including the three-theme contrast guard, theme store, nav, Today model, routine runner and capture card), `pnpm build` (`/demo` still prerenders) and `pnpm test:db` (57 tests, including the `profile.save` theme change and its audit row). The signed-in screens were checked from seeded data, not a live sign-in. Not yet covered: the other rooms (Habits, Fitness, Food, Schedule,
+Tasks, Review, History still use the old layouts with the new tokens), the sign-in redesign, and
+the optional time-of-day tint beyond Today.
 
 ## Checks already completed
 

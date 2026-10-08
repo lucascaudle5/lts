@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 
 export function TodayError({ onRetry }: { onRetry: () => void }) {
   return (
-    <Alert variant="destructive" role="alert">
-      <AlertTitle>Today couldn&rsquo;t load</AlertTitle>
+    <Alert role="alert" className="border-l-4 border-l-quiet bg-card p-4">
+      <AlertTitle className="font-heading text-lg">Your data is safe.</AlertTitle>
       <AlertDescription className="space-y-3">
-        <p>Your data is safe; LTS couldn&rsquo;t reach the database just now.</p>
+        <p>That didn&rsquo;t load. Try again?</p>
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
           <RotateCw aria-hidden />
           Try again

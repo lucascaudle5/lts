@@ -194,7 +194,11 @@ describe("complete workspace", () => {
     expect(JSON.stringify(a)).not.toContain("B private");
     expect(a.tasks.map((t) => t.title)).toEqual(["A task"]);
     expect(a.schedule.map((t) => t.title)).toEqual(["A block"]);
-    expect(await getPreferences(A, db)).toEqual({ timezone: TZ, authority: "ask" });
+    expect(await getPreferences(A, db)).toEqual({
+      timezone: TZ,
+      authority: "ask",
+      theme: "sandstone",
+    });
     expect(await getPreferences("dddddddd-0000-4000-8000-00000000000d", db)).toBeNull();
   });
   it("rejects cross-user parents, edits, archive and undo with no writes", async () => {
@@ -472,5 +476,26 @@ describe("complete workspace", () => {
     expect(await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.userId, A))).toHaveLength(
       0,
     );
+  });
+  it("saves the display theme through profile.save, audited and scoped to the user", async () => {
+    expect((await getPreferences(A, db))?.theme).toBe("sandstone");
+    const result = await mutate(A, [
+      { op: "profile.save", timezone: TZ, authority: "ask", theme: "dark" },
+    ]);
+    expect((await getPreferences(A, db))?.theme).toBe("dark");
+    expect((await getPreferences(B, db))?.theme).toBe("sandstone");
+    const [log] = await db
+      .select()
+      .from(changeLog)
+      .where(and(eq(changeLog.userId, A), eq(changeLog.mutationId, result.mutationId)));
+    expect(log).toMatchObject({ entityType: "profile", origin: "manual", actor: "user" });
+    expect((log?.before as { theme: string }).theme).toBe("sandstone");
+    expect((log?.after as { theme: string }).theme).toBe("dark");
+
+    await mutate(A, [{ op: "profile.save", timezone: "America/New_York", authority: "ask" }]);
+    expect(await getPreferences(A, db)).toMatchObject({
+      theme: "dark",
+      timezone: "America/New_York",
+    });
   });
 });

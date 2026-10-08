@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { HhMm, IsoDate, Timezone, Uuid } from "./common";
+import { HhMm, IsoDate, ThemeName, Timezone, Uuid } from "./common";
 import { ScheduleBlockCreate, TaskDetails } from "./commands";
 import { BlockKind, TaskKind, TaskPriority, TaskStatus, ObservationCategory } from "./common";
 
@@ -216,6 +216,8 @@ export const WorkspaceOperation = z.discriminatedUnion("op", [
     op: z.literal("profile.save"),
     timezone: Timezone,
     authority: z.enum(["ask", "allow_explicit"]),
+    /** Omitted means "leave the saved theme alone", so older callers keep working. */
+    theme: ThemeName.optional(),
   }),
   z.object({ op: z.literal("undo"), changeId: Uuid }),
 ]);

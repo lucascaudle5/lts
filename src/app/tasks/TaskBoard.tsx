@@ -15,7 +15,7 @@ const statuses: TaskStatus[] = ["open", "done", "parked"];
 
 function dateLabel(dueOn: string | null, today: string): string {
   if (!dueOn) return "No due date";
-  if (dueOn < today) return `Overdue · Due ${format(parseISO(dueOn), "EEE, MMM d")}`;
+  if (dueOn < today) return `Waiting since ${format(parseISO(dueOn), "EEE, MMM d")}`;
   if (dueOn === today) return "Due today";
   return `Due ${format(parseISO(dueOn), "EEE, MMM d")}`;
 }
@@ -39,7 +39,7 @@ function TaskEditor({ task }: { task: TaskRow }) {
           ) : null}
         </div>
         <span
-          className={`rounded-full border px-2.5 py-1 text-xs ${task.dueOn && task.dueOn < (task.today ?? "") ? "border-amber-500/40 text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}
+          className={`rounded-full border px-2.5 py-1 text-xs ${task.dueOn && task.dueOn < (task.today ?? "") ? "border-quiet/40 bg-quiet-soft text-quiet" : "text-muted-foreground"}`}
         >
           {dueText}
         </span>

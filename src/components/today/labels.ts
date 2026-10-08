@@ -10,15 +10,18 @@ export const BLOCK_KIND_LABEL: Record<BlockKind, string> = {
   personal: "Personal",
 };
 
-/** Left-edge accent per block kind; fixed blocks are solid, flexible ones dashed. */
+/**
+ * Block-kind hues as room tokens: --k is the edge and --k-soft the fill. Exams use gold, never red.
+ * Fixed blocks are solid, flexible ones dashed.
+ */
 export const BLOCK_KIND_ACCENT: Record<BlockKind, string> = {
-  work: "border-l-amber-500",
-  class: "border-l-sky-500",
-  exam: "border-l-rose-500",
-  fitness: "border-l-emerald-500",
-  meal: "border-l-orange-400",
-  focus: "border-l-violet-500",
-  personal: "border-l-slate-400",
+  work: "[--k:var(--blue)] [--k-soft:var(--blue-soft)]",
+  class: "[--k:var(--purple)] [--k-soft:var(--purple-soft)]",
+  exam: "[--k:var(--gold)] [--k-soft:var(--gold-soft)]",
+  fitness: "[--k:var(--green)] [--k-soft:var(--green-soft)]",
+  meal: "[--k:var(--lime)] [--k-soft:var(--lime-soft)]",
+  focus: "[--k:var(--ink-soft)] [--k-soft:var(--surface-3)]",
+  personal: "[--k:var(--line-strong)] [--k-soft:var(--surface-2)]",
 };
 
 export const TASK_KIND_LABEL: Record<TaskKind, string> = {

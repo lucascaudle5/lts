@@ -6,7 +6,8 @@ import { getAiSensitiveCategories, getPreferences } from "@/server/repositories/
 import { workspaceAction } from "@/app/(life)/actions";
 import { Preferences } from "./Preferences";
 import { requireUser } from "@/server/auth";
-import { saveAiCategorySettingsAction } from "./actions";
+import { AppearanceCard } from "./AppearanceCard";
+import { saveAiCategorySettingsAction, saveThemeAction } from "./actions";
 
 export const metadata: Metadata = { title: "Settings · LTS" };
 
@@ -34,14 +35,14 @@ async function SettingsContent() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
       <header className="space-y-2">
-        <p className="text-sm text-muted-foreground">Settings</p>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">AI access</h1>
+        <p className="eyebrow text-muted-foreground">Settings</p>
+        <h1 className="text-3xl">Make NOVA yours</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          LTS can use these observations when interpreting your notes. They stay private unless you
-          turn on a category. Access is recorded with each interpretation.
+          How NOVA looks, when it shows times, and what it may read when it interprets your notes.
         </p>
       </header>
 
+      <AppearanceCard persist={saveThemeAction} />
       <Preferences
         timezone={user.timezone}
         authority={preferences?.authority ?? "ask"}
@@ -49,8 +50,15 @@ async function SettingsContent() {
       />
       <form
         action={saveAiCategorySettingsAction}
-        className="space-y-5 rounded-xl border bg-card p-5"
+        className="space-y-5 rounded-2xl border bg-card p-5 shadow-paper"
       >
+        <div className="space-y-1">
+          <h2 className="text-lg">AI access</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            LTS can use these observations when interpreting your notes. They stay private unless
+            you turn on a category. Access is recorded with each interpretation.
+          </p>
+        </div>
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium">Sensitive observation categories</legend>
           {SensitiveCategory.options.map((category) => (

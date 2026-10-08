@@ -100,7 +100,7 @@ docs/               Constitution, playbook, architecture, ADRs, interim backlog
 supabase/           Local Supabase stack config (supabase start)
 src/proxy.ts        Refreshes the Supabase session cookie; sends signed-out users to /sign-in
 src/app/            Next.js routes and layouts: sign-in, password recovery, today, api/health
-src/components/     LTS components (auth, shell, today); ui/ holds shadcn/ui primitives
+src/components/     LTS components (auth, shell, theme, today, life, proposals); ui/ holds shadcn/ui primitives
 src/contracts/      zod schemas: domain commands, proposals, tool I/O, Today view, sign-in
 src/domain/         Pure rules: dates/times, slots, validation, conflicts, safety
 src/server/         auth.ts (requireUser, profile bootstrap), today.ts (Today view model), health

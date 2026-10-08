@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Sandbox } from "@/app/(life)/LifeWorkspace";
+import { ThemeSwitch } from "@/components/theme/ThemeSwitch";
 
 export const metadata: Metadata = { title: "Fictional demo · NOVA" };
 
@@ -10,12 +11,21 @@ export default function DemoPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-muted-foreground">NOVA · Life Tracker Suite</p>
-          <h1 className="text-2xl font-semibold">Try the workspace</h1>
+          <p className="flex items-center gap-2 eyebrow text-muted-foreground">
+            <span aria-hidden className="size-2.5 rounded-full bg-gold ring-4 ring-gold/25" />
+            NOVA · Life Tracker Suite
+          </p>
+          <h1 className="text-2xl">Try the workspace</h1>
         </div>
-        <Link href="/sign-in" className="min-h-10 rounded-lg border px-4 py-2 text-sm">
-          Sign in to your account
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <ThemeSwitch tone="page" />
+          <Link
+            href="/sign-in"
+            className="inline-flex min-h-11 items-center rounded-lg border border-input bg-card px-4 py-2 text-sm shadow-paper hover:bg-surface-2"
+          >
+            Sign in to your account
+          </Link>
+        </div>
       </header>
       <Sandbox
         data={{

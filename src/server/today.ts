@@ -79,7 +79,7 @@ function toTodayTask(row: TaskRow, today: IsoDate): TodayTask {
       dueOn === null
         ? null
         : pastDue
-          ? `Overdue · Due ${shortDate(dueOn)}`
+          ? `Waiting since ${shortDate(dueOn)}`
           : dueToday
             ? "Due today"
             : `Due ${shortDate(dueOn)}`,
@@ -132,6 +132,7 @@ export function buildTodayView(input: TodayInput): TodayView {
     date,
     timezone,
     dateLabel: format(parseISO(date), "EEEE, MMMM d"),
+    localHour: Number.parseInt(instantToLocal(now, timezone).time.slice(0, 2), 10),
     blocks: todayBlocks,
     upcoming,
     openTasks,
