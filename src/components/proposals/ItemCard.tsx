@@ -1,3 +1,7 @@
+import { cn } from "cn";
+
+import { Button } from "@/components/ui/button";
+import { BLOCK_KIND_ACCENT, BLOCK_KIND_LABEL } from "@/components/today/labels";
 import type { ProposalItem } from "@/contracts/proposals";
 
 import { DiffRow } from "./DiffRow";
@@ -29,6 +33,86 @@ function summary(item: ProposalItem): string {
   return item.payload.occurredOn ?? "Observation date needed";
 }
 
+/** What the change is, in plain words instead of `schedule_block · create`. */
+function kindWords(item: ProposalItem): string {
+  return item.kind === "schedule_block.create"
+    ? "Add to your schedule"
+    : item.kind === "task.create"
+      ? "Add as a task"
+      : "Keep what you said";
+}
+
+/** Each kind borrows a room hue: blocks use their own kind's, tasks plan-blue, notes self-purple. */
+function tint(item: ProposalItem): string {
+  if (item.kind === "schedule_block.create") {
+    return BLOCK_KIND_ACCENT[item.payload.blockKind ?? "personal"];
+  }
+  return item.kind === "task.create"
+    ? "[--k:var(--blue)] [--k-soft:var(--blue-soft)]"
+    : "[--k:var(--purple)] [--k-soft:var(--purple-soft)]";
+}
+
+/** Plain words for where the item stands. A gap is "Needs a time", never a failure badge. */
+export function statusWords(item: ProposalItem): {
+  text: string;
+  tone: "ok" | "wait" | "done" | "quiet";
+} {
+  switch (item.status) {
+    case "ready":
+      return { text: "Ready to add", tone: "ok" };
+    case "needs_input": {
+      const paths = item.missingSlots.map((slot) => slot.path.toLowerCase()).join(" ");
+      return {
+        text: /start|end|time/.test(paths)
+          ? "Needs a time"
+          : /date|due|day|occurred/.test(paths)
+            ? "Needs a day"
+            : "Needs a detail",
+        tone: "wait",
+      };
+    }
+    case "approved":
+    case "applied":
+      return { text: "Added", tone: "done" };
+    case "rejected":
+      return { text: "Set aside", tone: "quiet" };
+    default:
+      return { text: "Couldn't add this one", tone: "quiet" };
+  }
+}
+
+const STATUS_TONE = {
+  ok: "bg-success-soft text-success",
+  wait: "bg-gold-soft text-gold-text",
+  done: "bg-success-soft text-success",
+  quiet: "bg-surface-3 text-ink-soft",
+} as const;
+
+function Preview({ item }: { item: ProposalItem }) {
+  if (item.kind === "observation.record") {
+    return (
+      <div className="space-y-1.5">
+        <DiffRow
+          label="Say"
+          value={`\u201c${item.payload.valueText ?? "Observation"}\u201d`}
+          serif
+        />
+        <DiffRow label="Day" value={summary(item)} />
+      </div>
+    );
+  }
+  const detail =
+    item.kind === "schedule_block.create"
+      ? `${itemTitle(item)} \u00b7 ${BLOCK_KIND_LABEL[item.payload.blockKind ?? "personal"]}, ${item.payload.fixed ? "fixed" : "flexible"}`
+      : itemTitle(item);
+  return (
+    <div className="space-y-1.5">
+      <DiffRow label="Add" value={detail} />
+      <DiffRow label="When" value={summary(item)} />
+    </div>
+  );
+}
+
 export function ItemCard({
   item,
   captureId,
@@ -44,20 +128,32 @@ export function ItemCard({
 }) {
   const editable = item.status === "ready" || item.status === "needs_input";
   return (
-    <article className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <article
+      className={cn(
+        "space-y-4 rounded-2xl border border-l-[6px] border-l-(--k) bg-card p-4 shadow-paper sm:p-5",
+        tint(item),
+      )}
+    >
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-semibold">{itemTitle(item)}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">{item.kind.replaceAll(".", " · ")}</p>
+        <div className="min-w-0">
+          <p className="eyebrow text-ink-soft">{kindWords(item)}</p>
+          <h2 className="mt-1 text-xl leading-7 break-words">{itemTitle(item)}</h2>
         </div>
-        <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground capitalize">
-          {item.status.replaceAll("_", " ")}
+        <span
+          className={cn(
+            "rounded-full px-3 py-1 text-xs font-medium",
+            STATUS_TONE[statusWords(item).tone],
+          )}
+        >
+          {statusWords(item).text}
         </span>
       </header>
 
-      <div className="space-y-2">
-        <DiffRow label="Add" value={itemTitle(item)} />
-        <DiffRow label="When" value={summary(item)} />
+      <div className="space-y-1.5">
+        <p className="eyebrow text-muted-foreground">What will change</p>
+        <div className="rounded-xl border border-(--k)/40 bg-(--k-soft) p-2">
+          <Preview item={item} />
+        </div>
       </div>
 
       {item.missingSlots.length > 0 ? (
@@ -89,7 +185,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Title</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="title"
                   defaultValue={item.payload.title ?? ""}
                 />
@@ -97,7 +193,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Kind</span>
                 <select
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="blockKind"
                   defaultValue={item.payload.blockKind ?? "personal"}
                 >
@@ -111,7 +207,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Date</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="date"
                   type="date"
                   defaultValue={item.payload.date ?? ""}
@@ -120,7 +216,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Starts</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="start"
                   type="time"
                   defaultValue={item.payload.start ?? ""}
@@ -129,7 +225,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Ends</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="end"
                   type="time"
                   defaultValue={item.payload.end ?? ""}
@@ -150,7 +246,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Title</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="title"
                   defaultValue={item.payload.title ?? ""}
                 />
@@ -158,7 +254,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Kind</span>
                 <select
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="taskKind"
                   defaultValue={item.payload.taskKind ?? "other"}
                 >
@@ -172,7 +268,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Due date</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="dueOn"
                   type="date"
                   defaultValue={item.payload.dueOn ?? ""}
@@ -184,7 +280,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Category</span>
                 <select
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="category"
                   defaultValue={item.payload.category ?? "note"}
                 >
@@ -198,7 +294,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm">
                 <span>Date</span>
                 <input
-                  className="w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="occurredOn"
                   type="date"
                   defaultValue={item.payload.occurredOn ?? ""}
@@ -207,7 +303,7 @@ export function ItemCard({
               <label className="space-y-1 text-sm sm:col-span-2">
                 <span>Your words</span>
                 <textarea
-                  className="min-h-20 w-full rounded-md border bg-background px-3 py-2"
+                  className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2"
                   name="valueText"
                   maxLength={200}
                   defaultValue={item.payload.valueText ?? ""}
@@ -216,38 +312,39 @@ export function ItemCard({
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <button
-              className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted"
-              type="submit"
-            >
+            <Button type="submit" variant="outline" size="lg">
               Save edits
-            </button>
+            </Button>
           </div>
         </form>
       ) : null}
 
       {editable ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {item.status === "ready" ? (
-            <form action={approveAction}>
+            <form action={approveAction} className="contents">
               <input type="hidden" name="itemId" value={item.id} />
-              <button
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+              <Button
                 type="submit"
+                variant="gold"
+                size="lg"
+                className="w-full sm:w-auto sm:min-w-44"
               >
                 Approve this change
-              </button>
+              </Button>
             </form>
           ) : null}
-          <form action={rejectAction}>
+          <form action={rejectAction} className="contents">
             <input type="hidden" name="itemId" value={item.id} />
             <input type="hidden" name="captureId" value={captureId} />
-            <button
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+            <Button
               type="submit"
+              variant="ghost"
+              size="lg"
+              className="w-full text-ink-soft sm:w-auto"
             >
-              Reject
-            </button>
+              Not this one
+            </Button>
           </form>
         </div>
       ) : null}
