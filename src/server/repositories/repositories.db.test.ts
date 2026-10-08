@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 
 import type { Db } from "@/server/db/client";
 import { observations, profiles, scheduleBlocks, tasks } from "@/server/db/schema";
@@ -8,7 +9,11 @@ import { getToday } from "@/server/today";
 import { listBlocksStartingBetween } from "./blocks";
 import { listObservationsOn } from "./observations";
 import { getProfile } from "./profiles";
-import { listOpenTasks } from "./tasks";
+import { listOpenTasks, listTasks } from "./tasks";
+import { getRecentObservationsTool } from "@/server/tools/getRecentObservations";
+import { getScheduleTool } from "@/server/tools/getSchedule";
+import { getTodayTool } from "@/server/tools/getToday";
+import { listOpenTasksTool } from "@/server/tools/listOpenTasks";
 
 const A = "aaaaaaaa-0000-4000-8000-00000000000a";
 const B = "bbbbbbbb-0000-4000-8000-00000000000b";
@@ -103,6 +108,10 @@ beforeAll(async () => {
   await seedUser(A, "A");
   await seedUser(B, "B");
   await db.insert(profiles).values({ userId: EMPTY, timezone: "UTC" });
+  await db
+    .update(profiles)
+    .set({ aiSensitiveCategories: ["energy", "sleep"] })
+    .where(eq(profiles.userId, A));
 });
 
 afterAll(async () => {
@@ -153,6 +162,23 @@ describe("listOpenTasks", () => {
   });
 });
 
+describe("listTasks", () => {
+  it("returns every status for the requesting user, with open tasks first", async () => {
+    const rows = await listTasks(A, db);
+    expect(rows.map((row) => row.title)).toEqual([
+      "A essay",
+      "A exam",
+      "A groceries",
+      "A parked",
+      "A laundry",
+    ]);
+    expect(rows.every((row) => row.title.startsWith("A "))).toBe(true);
+    expect(rows[0]).toMatchObject({ status: "open", priority: "medium" });
+    expect(rows[3]).toMatchObject({ status: "parked" });
+    expect(rows[4]).toMatchObject({ status: "done" });
+  });
+});
+
 describe("listObservationsOn", () => {
   it("returns the user's observations for that date only", async () => {
     const rows = await listObservationsOn(A, "2026-10-07", db);
@@ -195,5 +221,47 @@ describe("getToday", () => {
   it("is empty for a user without rows", async () => {
     const view = await getToday(EMPTY, "UTC", NOW, db);
     expect(view.isEmpty).toBe(true);
+  });
+});
+
+describe("AI read tools", () => {
+  it("returns only the current user's bounded context", async () => {
+    const today = await getTodayTool(A, { date: "2026-10-07" }, TZ, db);
+    const schedule = await getScheduleTool(A, { from: "2026-10-07", to: "2026-10-14" }, TZ, db);
+    const tasks = await listOpenTasksTool(A, { limit: 50 }, db);
+    const combined = JSON.stringify({ today, schedule, tasks });
+    expect(combined).toContain("A groceries");
+    expect(combined).not.toContain("B ");
+    expect(today.openTaskCount).toBe(3);
+    expect(tasks.tasks).toHaveLength(3);
+    await expect(getTodayTool(B, { date: "2026-10-07" }, TZ, db)).resolves.toMatchObject({
+      blocks: expect.arrayContaining([expect.objectContaining({ title: "B gym" })]),
+    });
+  });
+
+  it("requires category opt-in and returns only that user's observations", async () => {
+    const input = { days: 14, categories: ["energy", "sleep"] };
+    await expect(getRecentObservationsTool(A, input, "2026-10-07", db)).resolves.toMatchObject({
+      observations: expect.arrayContaining([expect.objectContaining({ valueText: "A tired" })]),
+    });
+    await db.insert(observations).values({
+      userId: A,
+      category: "energy",
+      valueText: "A future entry",
+      occurredOn: "2026-10-08",
+      source: "manual_entry",
+      quote: "A future entry",
+      origin: "manual",
+    });
+    const recent = await getRecentObservationsTool(
+      A,
+      { days: 14, categories: ["energy"] },
+      "2026-10-07",
+      db,
+    );
+    expect(recent.observations.map((row) => row.valueText)).not.toContain("A future entry");
+    await expect(getRecentObservationsTool(B, input, "2026-10-07", db)).rejects.toThrow(
+      "not been enabled",
+    );
   });
 });

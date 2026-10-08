@@ -19,7 +19,7 @@ Work happens in this order. Each milestone ends with `pnpm check` green on `main
 | M7  | Weekly Review over history; inferences as proposals                                                    | `v0.7.0` |
 | M8  | Freeze: fixes, export, docs, production verification                                                   | `v1.0.0` |
 
-**Not in the plan:** anything else. New ideas go to the backlog (GitHub Issues with the `backlog`
+**Current scope:** Lucas authorized the complete manual workspace and legacy parity on 2026-10-08. See LEGACY_PARITY.md and STATUS.md. New ideas go to the backlog (GitHub Issues with the `backlog`
 label, or `docs/BACKLOG.md` until the GitHub repo exists). Pull one in only if it blocks the current
 milestone — and say which demonstrated problem it solves in the PR.
 
@@ -97,7 +97,9 @@ Golden AI fixtures double as seed-able captures.
 
 ## AI structured output
 
-- The model's only way to return changes is `submit_proposals`; anything else is ignored.
+- The model has no database access. A bounded typed action passes an authority and risk check; an
+  explicitly allowed low-risk command may execute directly, while interpretive or high-impact actions
+  return through `submit_proposals` for confirmation.
 - Parse with the zod contract; on failure, retry once with the validation error appended, then fall
   back to the deterministic parser. Record every attempt in `harness_runs`.
 - Keep traces minimal: `LTS_AI_TRACE_MODE=metadata` in production. Switch a local or preview
@@ -166,3 +168,15 @@ needed from M2). The full student-friendly walkthrough is in the project's hosti
 7. **Deploy:** merge to `main`. Open the same production URL on phone and laptop and sign in with
    the same email; both read the same database, so data is in sync. Don't keep real data on
    preview URLs.
+
+## Hosted dev workflow
+
+Normal testing means opening the Vercel Preview site. One Vercel project deploys main to Production
+and branches/PRs to Preview. Preview connects to lts-dev Supabase; Production connects to lts.
+Non-exportable Preview Secrets are available to hosted builds; do not weaken them to pull locally.
+The build checks the project references and applies additive migrations before building. No local
+Docker/database is needed for normal browser use. Disposable DB integration tests remain a release gate.
+
+Gateway evaluation is paced for the account quota. Run pnpm eval with LTS_AI_MODEL and a Gateway key
+or fresh Vercel OIDC token. Diagnostic fake-fixture results go to ignored test-results/ai-eval.json.
+A failed evaluation is not a passing M4 acceptance.

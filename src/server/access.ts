@@ -1,5 +1,12 @@
 /** Routes that work without a session. Everything else requires one (default deny). */
-const PUBLIC_PATHS = ["/sign-in", "/forgot-password", "/reset-password", "/auth", "/api/health"];
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
+  "/api/health",
+  "/demo",
+];
 
 export const HOME_PATH = "/today";
 export const SIGN_IN_PATH = "/sign-in";

@@ -68,14 +68,23 @@ function toTodayBlock(row: BlockRow, timezone: string, now: Date): TodayBlock {
 function toTodayTask(row: TaskRow, today: IsoDate): TodayTask {
   const dueOn = row.dueOn ?? null;
   const dueToday = dueOn === today;
+  const pastDue = dueOn !== null && daysBetween(today, dueOn) < 0;
   return {
     id: row.id,
     title: row.title,
     taskKind: row.kind,
+    priority: row.priority,
     dueOn,
-    dueLabel: dueOn === null ? null : dueToday ? "Due today" : `Due ${shortDate(dueOn)}`,
+    dueLabel:
+      dueOn === null
+        ? null
+        : pastDue
+          ? `Overdue · Due ${shortDate(dueOn)}`
+          : dueToday
+            ? "Due today"
+            : `Due ${shortDate(dueOn)}`,
     dueToday,
-    pastDue: dueOn !== null && daysBetween(today, dueOn) < 0,
+    pastDue,
     provenance:
       row.captureId && row.captureDate
         ? { captureId: row.captureId, referenceDate: row.captureDate }

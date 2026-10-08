@@ -12,6 +12,9 @@ describe("accessRedirect", () => {
     ["/forgot-password", "", null],
     ["/reset-password", "", null],
     ["/api/health", "", null],
+    ["/demo", "", null],
+    ["/demox", "", "/sign-in?next=%2Fdemox"],
+    ["/api/export", "", "/sign-in?next=%2Fapi%2Fexport"],
     ["/sign-inx", "", "/sign-in?next=%2Fsign-inx"],
   ])("signed out: %s%s → %s", (path, search, expected) => {
     expect(accessRedirect(path, search, false)).toBe(expected);

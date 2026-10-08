@@ -20,6 +20,8 @@ const REQUIRED_FIELDS: Record<CommandKind, RequiredField[]> = {
     { path: "title", reason: "What's the task?" },
     { path: "taskKind", reason: "What kind of task is this?", options: TaskKind.options },
   ],
+  // Updates are direct commands only; they aren't partial proposal cards.
+  "task.update": [],
   "observation.record": [
     { path: "category", reason: "What is this about?", options: ObservationCategory.options },
     { path: "valueText", reason: "What did you say?" },

@@ -100,7 +100,10 @@ export async function seedSam(db: Db, referenceDate: IsoDate): Promise<SeedCount
     origin: "manual" as const,
   }));
 
-  const mutationCommands: Extract<MutationRequest, { origin: "manual" }>["commands"] = [
+  const mutationCommands: Extract<
+    MutationRequest,
+    { origin: "manual"; commands: readonly unknown[]; timezone: string }
+  >["commands"] = [
     ...blockRows.map((row) => {
       const start = instantToLocal(row.startsAt, SAM_TIMEZONE);
       const end = instantToLocal(row.endsAt, SAM_TIMEZONE);

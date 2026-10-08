@@ -15,3 +15,21 @@ export async function getProfile(userId: string, db: Db = getDb()): Promise<Prof
     .limit(1);
   return row ?? null;
 }
+
+export async function getAiSensitiveCategories(userId: string, db: Db = getDb()) {
+  const [row] = await db
+    .select({ categories: profiles.aiSensitiveCategories })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
+  return row?.categories ?? [];
+}
+
+export async function getPreferences(userId: string, db: Db = getDb()) {
+  const [row] = await db
+    .select({ timezone: profiles.timezone, authority: profiles.aiAuthority })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
+  return row ?? null;
+}

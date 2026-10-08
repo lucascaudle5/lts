@@ -8,6 +8,34 @@
       "when": 1791405486056,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791460056431,
+      "tag": "0001_little_red_ghost",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791461408607,
+      "tag": "0002_boring_blink",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791461888177,
+      "tag": "0003_sharp_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791462906288,
+      "tag": "0004_oval_galactus",
+      "breakpoints": true
     }
   ]
 }

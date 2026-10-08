@@ -5,9 +5,16 @@ cursor:
 
 # Build Sequence: M0 → v1.0
 
-Ordered. Each milestone ends with `pnpm check` + CI green on `main` and an annotated tag. The
-anti-rewrite rule applies to every row: if it isn't listed under the milestone, it isn't built in
-that milestone.
+Staged roadmap, not a feature freeze. Finish the minimum M4 harness work, then use
+[`../LEGACY_PARITY.md`](../LEGACY_PARITY.md) to restore useful capability. Each release milestone
+ends with `pnpm check`, CI green, and an annotated tag. Pull a high-value parity feature forward when
+it makes LTS more useful without weakening data safety or the current architecture.
+
+## Current delivery scope
+
+On 2026-10-08 Lucas requested the whole usable app. This branch combines M4 and the manual
+capability across all parity sprints. LEGACY_PARITY.md tracks implemented behavior and boundaries;
+STATUS.md records checks and deployment. The milestones below remain acceptance guidance.
 
 ## M0: Repository skeleton (done, branch `cursor/lts-successor-skeleton-9c87`) → `v0.0.0`
 
@@ -76,53 +83,61 @@ that milestone.
 - **Do not build yet:** chat UI, history Q&A, inferences, Review, streaming, multiple prompt
   strategies, provider SDKs.
 
-## M5: Slice hardening and first deploy → `v0.5.0`
+## M5: Parity Sprint 1 — Today, Schedule, Tasks → `v0.5.0`
 
-- **Goal:** trustworthy enough to use daily.
-- **Files:** proposal kinds `schedule_block.update`, `task.update` with before/after diff;
-  direct edit/delete for blocks and tasks (Article 6) through `runMutations` (`origin: manual`);
-  `src/server/mutations/undoChange.ts` (`origin: undo`);
-  `src/app/history/`; `e2e/slice.spec.ts`, `playwright.config.ts`; CI e2e job (Supabase CLI in
-  Actions); Vercel + Supabase (Marketplace) + AI Gateway production setup per hosting-setup.md; `/api/health` with version.
-- **Definition of done:** slice e2e green in CI; deployed; Lucas uses it for real captures for a week
-  and files bugs (not features) from that week.
-- **Tests:** e2e slice (proposal path and manual path); undo restores `before`; update diffs;
-  conflict warnings on edits; OIDC auth works on the deployed preview.
-- **Do not build yet:** routines, Review, recurring blocks, notifications, PWA.
+- **Goal:** Lucas can manage a normal work/school day from the browser.
+- **Files:** task list/create/status/priority and overdue handling; schedule day/week planning,
+  fixed and lightweight recurring commitments, conflict awareness, and direct block edits through
+  `runMutations`; Today links to the next action; preserve the capture-to-proposal flow; add the slice
+  e2e and deploy to Development.
+- **Definition of done:** create and complete/park dated work; inspect a week of commitments; see
+  overdue work plainly; resolve schedule conflicts; inspect recurring commitments; use Today to get
+  to relevant tasks and blocks.
+- **Tests:** task ordering/status and due-date rules, cross-user repository isolation, audited manual
+  mutations, schedule conflict cases, and browser coverage of task/capture/Today flow.
 
-## M6: Routines with recovery variants → `v0.6.0`
+## M6: Parity Sprint 2 — Habits and routines → `v0.6.0`
 
-- **Goal:** one recurring feature that turns misses into smaller next steps.
-- **Files:** `routines`, `routine_variants`, `routine_runs` migration; `src/domain/routines.ts`
-  (variant suggestion rule); `src/app/routines/`; Today routine panel; proposal kind
-  `routine_run.log`; tool `get_recent_routines`.
-- **Definition of done:** create a routine with full/short/minimum; Today suggests a variant with a
-  cited reason; logging the minimum counts as done; a miss offers minimum/move/skip with no penalty
-  language.
-- **Tests:** suggestion rule table; copy check (no streak/shame words) as a unit test over UI strings;
-  `routine_run.log` approval.
-- **Do not build yet:** streaks, scores, habit stats dashboards, fitness programming.
+- **Goal:** daily maintenance stays usable after misses, without shame or streak pressure.
+- **Files:** habit and routine tables; full/short/minimum variants; anchors, repeat patterns,
+  intentional skip, logs, recovery rules, Today integration, and bounded AI read tools where useful.
+- **Definition of done:** log a habit; run or intentionally skip a routine; minimum counts when the
+  routine defines it; missed items offer a small next step, move, or park.
+- **Tests:** recovery rules, minimum completion, tenancy, mutation audit, and copy checks.
 
-## M7: Weekly Review and inferences → `v0.7.0`
+## M7: Parity Sprint 3 — Fitness and diet → `v0.7.0`
 
-- **Goal:** Review can reason over history without turning guesses into facts.
-- **Files:** `inferences`, `reviews` migration; tools `search_history`, `propose_inference`,
-  `create_review`; `src/app/review/`; dismissal memory for suggestions.
-- **Definition of done:** a weekly review draft cites the observation/run/change ids it used; every
-  inference shows evidence, confidence, and expiry, and is accept/reject only; accepting never
-  creates an observation.
-- **Tests:** inference must cite ≥ 1 observation; expiry; Review fixture evals; safety denylist on
-  review text.
-- **Do not build yet:** connectors, frontier/floor UI, operating-state dashboard, money/diet/fitness
-  domains.
+- **Goal:** replace separate basic workout and meal notes with practical tracking.
+- **Files:** workout sessions/exercises/sets, bodyweight notes when Lucas enters them, substitutions,
+  meal logs/templates/favorites, optional targets, Today and schedule links.
+- **Definition of done:** log a workout and a repeated meal; view progress and upcoming protected
+  time; all measurements are explicitly user supplied.
+- **Tests:** calculations from entered data only, tenancy, mutation audit, and recovery/substitution
+  behavior.
 
-## M8: Freeze → `v1.0.0`
+## M8: Parity Sprint 4 — Sleep, capacity, Review, history → `v0.8.0`
 
-- **Goal:** finish.
-- **Files:** JSON export; README/ARCHITECTURE refresh; bug fixes from real use; migrate
-  `docs/BACKLOG.md` to GitHub Issues if not done.
-- **Definition of done:** all success criteria in the slice spec hold in production; export works;
-  no open "state changed without approval" bugs; tag `v1.0.0`.
-- **Tests:** full suite + manual production smoke.
-- **Do not build yet:** everything in the backlog. That becomes v1.1, chosen on evidence from
-  using v1.0.
+- **Goal:** inspect what happened and make evidence-backed adjustments.
+- **Files:** user-reported sleep/state observations, weekly Review with cited evidence, expiring
+  inferences kept separate from observations, change history and undo.
+- **Definition of done:** Review cites observation/run/change ids; history can inspect and recover
+  prior changes; no inferred state becomes a user observation.
+- **Tests:** evidence requirements, expiry, undo, sensitive-data boundaries, and Review fixture evals.
+
+## M9: Parity Sprint 5 — Projects and money → `v0.9.0`
+
+- **Goal:** cover Lucas's remaining high-value practical areas without building accounting software.
+- **Files:** small project records with next actions and status; bills, income/recurring obligations,
+  balances where useful, and Today/Review links.
+- **Definition of done:** active project next actions and upcoming payments can be reviewed and
+  acted on; every field has a screen or decision that uses it.
+- **Tests:** due/recurrence rules, tenancy, mutation audit, and overdue behavior.
+
+## M10: LTS 1.0 hardening → `v1.0.0`
+
+- **Goal:** make Development useful for testing and Production safe for durable personal data.
+- **Files:** JSON export, backups and migration checks, responsive/mobile fixes, deploy reliability,
+  performance, release docs, and bugs found during actual use.
+- **Definition of done:** parity success criteria hold in Production; export and recovery work; no
+  open data-isolation or silent-mutation defects; tag `v1.0.0`.
+- **Tests:** full suite, CI, and manual Development/Production smoke checks.

@@ -7,11 +7,17 @@ approved changes reach your Today view, and every change records where it came f
 **AI interprets and proposes. The user governs.** The rules behind that sentence are in
 [`docs/PRODUCT_CONSTITUTION.md`](docs/PRODUCT_CONSTITUTION.md).
 
-> Status: **M2 — sign-in and read-only Today.** Email/password sign-in (Supabase Auth), an app
-> shell, and a Today screen that reads your schedule, upcoming week, open tasks, and today's
-> self-reports from the database. Nothing can be created or edited in the app yet: the capture →
-> approval loop arrives in M3, AI in M4. See the milestone table in
-> [`docs/DEVELOPMENT_PLAYBOOK.md`](docs/DEVELOPMENT_PLAYBOOK.md#milestones).
+> Status: **Complete workspace candidate on the development branch.** Today, schedule, tasks,
+> habits, routines, fitness, diet, Mind, projects, money, Review, history/archive, sandbox, settings
+> and NOVA capture are implemented. See [parity and boundaries](docs/LEGACY_PARITY.md) and
+> [current checks/deployment](docs/STATUS.md).
+
+## Try updates in a browser
+
+Use the Vercel branch Preview linked to the separate lts-dev Supabase database. Main deploys to
+Production. No Docker or local services are needed for normal use. The public /demo contains only
+fictional data and browser-memory changes; sign in for your saved workspace. Preview builds apply
+additive migrations after verifying the environment project references.
 
 ## Run it locally
 

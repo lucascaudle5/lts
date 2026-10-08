@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
@@ -13,6 +14,7 @@ const V1_TABLES = [
   "change_log",
   "harness_run_payloads",
   "harness_runs",
+  "life_records",
   "observations",
   "profiles",
   "proposal_items",
@@ -110,7 +112,10 @@ describe("0000_init on an empty database", () => {
     await migrateFresh();
     const [{ count }] = await sql<{ count: number }[]>`
       select count(*)::int from drizzle.__drizzle_migrations`;
-    expect(count).toBe(1);
+    const journal = JSON.parse(readFileSync("db/migrations/meta/_journal.json", "utf8")) as {
+      entries: unknown[];
+    };
+    expect(count).toBe(journal.entries.length);
   });
 });
 

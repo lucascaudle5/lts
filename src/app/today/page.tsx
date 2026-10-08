@@ -6,6 +6,9 @@ import { TodayView } from "@/components/today/TodayView";
 import { requireUser } from "@/server/auth";
 import { getToday } from "@/server/today";
 import { CaptureForm } from "./CaptureForm";
+import { getWorkspace } from "@/server/workspace";
+import { workspaceAction } from "@/app/(life)/actions";
+import { DailyDashboard } from "./DailyDashboard";
 
 export const metadata: Metadata = { title: "Today · LTS" };
 
@@ -29,6 +32,8 @@ async function TodayContent({
   const query = await searchParams;
   const user = await requireUser();
   const view = await getToday(user.userId, user.timezone, new Date());
+  const workspace = await getWorkspace(user.userId, user.timezone);
+  if (workspace.records.some((record) => !record.archivedAt)) view.isEmpty = false;
   const added = Number.parseInt(query.added ?? "", 10);
   return (
     <div className="space-y-8">
@@ -42,6 +47,7 @@ async function TodayContent({
       ) : null}
       <CaptureForm invalid={query.capture === "invalid"} />
       <TodayView view={view} />
+      <DailyDashboard data={workspace} act={workspaceAction} />
     </div>
   );
 }

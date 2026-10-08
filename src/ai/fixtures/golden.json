@@ -1,0 +1,355 @@
+[
+  {
+    "id": "task-groceries",
+    "capture": "Need to buy groceries.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "buy groceries", "taskKind": "errand" },
+          "quote": "Need to buy groceries",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-email",
+    "capture": "I need to email Sam.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "email Sam", "taskKind": "other" },
+          "quote": "I need to email Sam",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-laundry",
+    "capture": "Do the laundry.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "do the laundry", "taskKind": "chore" },
+          "quote": "Do the laundry",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-read",
+    "capture": "Read chapter 4 for class.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "read chapter 4 for class", "taskKind": "assignment" },
+          "quote": "Read chapter 4 for class",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-pharmacy",
+    "capture": "Pick up my prescription.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "pick up my prescription", "taskKind": "errand" },
+          "quote": "Pick up my prescription",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-dishes",
+    "capture": "Wash the dishes tonight.",
+    "referenceDate": "2026-10-08",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": {
+            "title": "wash the dishes",
+            "taskKind": "chore",
+            "dueOn": "2026-10-08"
+          },
+          "quote": "Wash the dishes tonight",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-call",
+    "capture": "Call the dentist tomorrow.",
+    "referenceDate": "2026-10-08",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": {
+            "title": "call the dentist",
+            "taskKind": "errand",
+            "dueOn": "2026-10-09"
+          },
+          "quote": "Call the dentist tomorrow",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-submit",
+    "capture": "Submit my history assignment.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "submit my history assignment", "taskKind": "assignment" },
+          "quote": "Submit my history assignment",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-clean",
+    "capture": "Clean my desk.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "clean my desk", "taskKind": "chore" },
+          "quote": "Clean my desk",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-bank",
+    "capture": "Stop by the bank.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "stop by the bank", "taskKind": "errand" },
+          "quote": "Stop by the bank",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-notes",
+    "capture": "Review my lecture notes.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "review my lecture notes", "taskKind": "assignment" },
+          "quote": "Review my lecture notes",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-trash",
+    "capture": "Take out the trash.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "take out the trash", "taskKind": "chore" },
+          "quote": "Take out the trash",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-mail",
+    "capture": "Mail the package.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "mail the package", "taskKind": "errand" },
+          "quote": "Mail the package",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-study",
+    "capture": "Study for my biology exam.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "study for my biology exam", "taskKind": "exam" },
+          "quote": "Study for my biology exam",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-water",
+    "capture": "Water the plants.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "water the plants", "taskKind": "chore" },
+          "quote": "Water the plants",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-return",
+    "capture": "Return the library books.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "return the library books", "taskKind": "errand" },
+          "quote": "Return the library books",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-project",
+    "capture": "Work on my physics project.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "work on my physics project", "taskKind": "assignment" },
+          "quote": "Work on my physics project",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-bed",
+    "capture": "Make the bed.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "make the bed", "taskKind": "chore" },
+          "quote": "Make the bed",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-gift",
+    "capture": "Buy a birthday card for Alex.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "buy a birthday card for Alex", "taskKind": "errand" },
+          "quote": "Buy a birthday card for Alex",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-prep",
+    "capture": "Prepare for the chemistry test.",
+    "expected": {
+      "items": [
+        {
+          "kind": "task.create",
+          "payload": { "title": "prepare for the chemistry test", "taskKind": "exam" },
+          "quote": "Prepare for the chemistry test",
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "id": "slice-worked-example",
+    "capture": "Work Saturday 2–7, test Tuesday, gym Monday Wednesday Friday, need groceries, and I've been exhausted lately.",
+    "referenceDate": "2026-10-07",
+    "timezone": "America/Chicago",
+    "expected": {
+      "items": [
+        {
+          "kind": "schedule_block.create",
+          "payload": {
+            "title": "Work",
+            "blockKind": "work",
+            "date": "2026-10-10",
+            "start": "14:00",
+            "end": "19:00",
+            "fixed": true
+          },
+          "quote": "Work Saturday 2–7",
+          "confidence": "high"
+        },
+        {
+          "kind": "task.create",
+          "payload": { "title": "Test", "taskKind": "exam", "dueOn": "2026-10-13" },
+          "quote": "test Tuesday",
+          "confidence": "high"
+        },
+        {
+          "kind": "schedule_block.create",
+          "payload": { "title": "Gym", "blockKind": "fitness", "date": "2026-10-12" },
+          "quote": "gym Monday Wednesday Friday",
+          "confidence": "medium"
+        },
+        {
+          "kind": "schedule_block.create",
+          "payload": { "title": "Gym", "blockKind": "fitness", "date": "2026-10-07" },
+          "quote": "gym Monday Wednesday Friday",
+          "confidence": "medium"
+        },
+        {
+          "kind": "schedule_block.create",
+          "payload": { "title": "Gym", "blockKind": "fitness", "date": "2026-10-09" },
+          "quote": "gym Monday Wednesday Friday",
+          "confidence": "medium"
+        },
+        {
+          "kind": "task.create",
+          "payload": { "title": "Groceries", "taskKind": "errand" },
+          "quote": "need groceries",
+          "confidence": "medium"
+        },
+        {
+          "kind": "observation.record",
+          "payload": {
+            "category": "energy",
+            "valueText": "I've been exhausted lately",
+            "occurredOn": "2026-10-07"
+          },
+          "quote": "I've been exhausted lately",
+          "confidence": "medium"
+        }
+      ]
+    }
+  }
+]

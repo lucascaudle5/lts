@@ -16,6 +16,7 @@ import { updateProposalItem } from "@/server/approval/updateItem";
 import { interpretCapture } from "@/server/compiler/interpretCapture";
 import { createCapture } from "@/server/captures";
 import { requireUser } from "@/server/auth";
+import { applyAllowedExplicitTask } from "@/server/compiler/explicit";
 
 function optionalText(formData: FormData, name: string): string | undefined {
   const value = formData.get(name);
@@ -32,7 +33,14 @@ export async function createCaptureAction(formData: FormData): Promise<void> {
   if (!input.success) redirect("/today?capture=invalid");
 
   const created = await createCapture(user.userId, input.data.text, user.timezone);
-  if (!created.safetyStop) await interpretCapture(user.userId, created.captureId);
+  if (!created.safetyStop) {
+    await interpretCapture(user.userId, created.captureId);
+    if (await applyAllowedExplicitTask(user.userId, created.captureId)) {
+      revalidatePath("/today");
+      revalidatePath("/tasks");
+      redirect("/today?added=1");
+    }
+  }
   redirect(`/captures/${created.captureId}`);
 }
 

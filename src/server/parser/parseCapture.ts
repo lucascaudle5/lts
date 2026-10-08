@@ -11,8 +11,10 @@ const OBSERVATION_PATTERNS: readonly {
   { pattern: /\b(stressed|stressful|under pressure)\b/i, category: "stress" },
 ];
 
-const TASK_START = /\b(?:need|needs|buy|get|pick up|remember to|todo)\s+(.+)$/i;
+const TASK_START = /\b(?:needs?(?:\s+to)?|buy|get|pick up|remember to|todo)\s+(.+)$/i;
 const KNOWN_TASK = /\b(groceries|laundry|homework|assignment|exam|test|email|call|appointment)\b/i;
+const TASK_ACTION =
+  /^(?:i\s+(?:need to|want to)\s+)?(?:read|review|finish|complete|submit|pay|take out|do|wash|clean|book|call|email|drink|order|return|write|prep|prepare|put away)\b/i;
 const KNOWN_BLOCK =
   /\b(work|class|lecture|lab|gym|workout|dentist|doctor|meeting|study|lunch|dinner)\b/i;
 
@@ -93,7 +95,9 @@ export function parseCapture(text: string, referenceDate: IsoDate): ProposalDraf
     }
 
     const taskMatch = clause.match(TASK_START);
-    const isTask = Boolean(taskMatch || KNOWN_TASK.test(clause));
+    const isTask = Boolean(
+      taskMatch || KNOWN_TASK.test(clause) || (!timeRange && TASK_ACTION.test(clause)),
+    );
     if (isTask) {
       const explicitTitle = taskMatch?.[1]?.trim();
       const title = explicitTitle

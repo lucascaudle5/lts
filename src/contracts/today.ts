@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-import { BlockKind, HhMm, IsoDate, ObservationCategory, TaskKind, Timezone, Uuid } from "./common";
+import {
+  BlockKind,
+  HhMm,
+  IsoDate,
+  ObservationCategory,
+  TaskKind,
+  TaskPriority,
+  Timezone,
+  Uuid,
+} from "./common";
 
 const ProvenanceLink = z.object({ captureId: Uuid, referenceDate: IsoDate }).nullable();
 
@@ -35,6 +44,7 @@ export const TodayTask = z.object({
   id: Uuid,
   title: z.string(),
   taskKind: TaskKind,
+  priority: TaskPriority,
   dueOn: IsoDate.nullable(),
   /** e.g. "Due today", "Due Tue, Oct 13", or null when there is no due date. */
   dueLabel: z.string().nullable(),

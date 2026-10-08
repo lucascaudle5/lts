@@ -1,7 +1,8 @@
 # Agent guide for LTS
 
-LTS (Life Tracker Suite) 1.0 turns messy real-life input into typed proposals that the user approves,
-edits, or rejects. Only approved or directly made changes reach Today: AI proposes, the user governs.
+LTS (Life Tracker Suite) 1.0 turns messy real-life input into useful actions the user can govern.
+The current architecture is the destination; the legacy app is the behavioral reference for restoring
+useful product capability quickly. See `docs/LEGACY_PARITY.md`.
 
 Read before changing anything. These docs win over this file and over your own ideas:
 
@@ -20,24 +21,28 @@ Read before changing anything. These docs win over this file and over your own i
   Drizzle, zod, Vitest, Vercel. Don't replace any of these, the proposal/mutation architecture, or
   the repo structure unless implementation produces concrete evidence that it is blocking (a failing
   test, a measured limit, an unmeetable requirement). That evidence opens an ADR.
-- **Anti-rewrite:** build only what the current milestone lists, and respect its "Do not build yet"
-  list. New ideas go to `docs/BACKLOG.md`. Don't rewrite working code to taste.
+- **Product-first:** use the current milestone as a guide, not a reason to defer a high-value legacy
+  capability. Check `docs/LEGACY_PARITY.md` before substantial feature work. Reuse product behavior
+  aggressively while keeping the current architecture. New ideas outside the parity target go to
+  `docs/BACKLOG.md`; don't rewrite working code to taste.
 - **Mutation layer:** every consequential domain write (schedule blocks, tasks, observations,
   profile settings, and later routines/inferences/reviews) goes through `runMutations` in
   `src/server/mutations/`: validate → authorize every row against `userId` → write → `change_log`
   (before/after, actor, origin) → provenance, all in one transaction. Only that folder may import
   repository write helpers (`*.writes.ts`); ESLint enforces it.
-- **Approval:** AI or parser output is only ever a proposal. Nothing is written to domain tables until
-  the user approves an item. Rejected items write nothing. Manual edits use the same mutation layer
-  with `origin: manual`.
+- **Authority:** explicit, low-risk commands may execute directly when the user's permission setting
+  allows it. Autonomous or interpretive suggestions and high-impact actions require confirmation.
+  Every domain write, direct or confirmed, uses `runMutations`; manual edits use `origin: manual`.
+  Rejected proposals write nothing.
 - **Tenancy:** repositories take `userId` first and filter by it. Every repository function and AI tool
   gets a cross-user isolation test (user B sees and changes nothing of user A's).
 - **AI safety:** no diagnosis, condition names, or medication advice; no identity or personality
   labels; never turn feelings into numbers, scores, or modes; observations quote the user, and
   inferences are separate from observations and never become them; no shame or streak-loss copy.
   The risk-language stop is a narrow fixed phrase list (no AI call, fixed message pointing to human
-  help, US 988). It is not a crisis classifier, and nothing may claim it is. AI tools are read-only,
-  allowlisted, and limited; the only output is `submit_proposals`.
+  help, US 988). It is not a crisis classifier, and nothing may claim it is. AI tools are
+  allowlisted and limited. Typed low-risk actions may execute only after checking the user's
+  authority setting; interpretive and high-impact changes require confirmation.
 
 ## Commands
 

@@ -4,7 +4,8 @@ Status: accepted for v1. Changes need a demonstrated limitation (Constitution, A
 ADR. From M1 on, the stack-lock rule in `DEVELOPMENT_PLAYBOOK.md` applies.
 
 **Core invariant:** all consequential domain mutations go through the same audited mutation layer.
-AI-generated mutations additionally require proposal approval.
+An authority check routes explicit low-risk commands the user has allowed to a direct mutation;
+interpretive or high-impact actions remain proposals that require confirmation.
 
 ## Shape in one picture
 
@@ -14,11 +15,12 @@ Browser (React UI, no secrets, no table access)
    ▼
 Next.js server ─────────────────────────────────────────────────────────────────┐
    │                                                                           │
-   ├─ compiler: capture text → AI harness or parser → ProposalItem[]           │
-   │     └─ validate → resolve dates/times → grounding/safety → missing slots  │
-   ├─ approval: approved items ──────────┐                                     │
-   ├─ manual edits (forms, undo) ────────┤                                     │
-   │                                     ▼                                     │
+   ├─ compiler: capture text → AI harness or parser → typed candidate actions
+   │     └─ validate → normalize → grounding/safety → authority and risk check
+   ├─ confirmation: interpretive/high-impact proposals ─┐
+   ├─ allowed explicit low-risk commands ───────────────┤
+   ├─ manual edits and undo ────────────────────────────┤
+   │                                                   ▼
    ├─ mutation layer: validate → authorize → write → change_log → provenance   │
    │                  all inside ONE Postgres transaction                      │
    ├─ AI harness: gateway adapter + bounded read tools (no SQL, no writes)     │
@@ -91,7 +93,7 @@ the settings columns of `profiles`. Pipeline bookkeeping (`captures`, `proposal_
 | `harness_run_payloads`  | Raw prompt/output text (prunable)                   | `harness_run_id`, `raw_prompt text`, `raw_output text`, `expires_at`                                                                                                                                                                                                        |
 | `proposal_items`        | Typed IR, one row per proposed change               | `capture_id`, `harness_run_id`, `kind`, `payload jsonb`, `original_payload jsonb`, `status`, `missing_slots jsonb`, `warnings jsonb`, `source`, `confidence`, `quote`, `decided_at`, `applied_entity_id`                                                                    |
 | `schedule_blocks`       | Time-bound commitments                              | `title`, `kind` (work/class/exam/fitness/meal/focus/personal), `starts_at`, `ends_at` (timestamptz), `fixed`, `origin` (manual/proposal), `origin_item_id`, `deleted_at`                                                                                                    |
-| `tasks`                 | Things to do, optionally dated                      | `title`, `kind` (errand/assignment/exam/chore/other), `due_on date`, `status` (open/done/parked), `notes`, `origin`, `origin_item_id`                                                                                                                                       |
+| `tasks`                 | Things to do, optionally dated                      | `title`, `kind` (errand/assignment/exam/chore/other), `due_on date`, `priority` (low/medium/high), `status` (open/done/parked), `notes`, `origin`, `origin_item_id`                                                                                                         |
 | `observations`          | What the user reported or logged                    | `category` (energy/sleep/stress/capacity/note), `value_text`, `value_num` (only if user gave a number), `occurred_on`, `source` (user_statement/manual_entry), `quote`, `sensitivity`, `origin_item_id`                                                                     |
 | `change_log`            | Every consequential write                           | `mutation_id` (groups one transaction), `entity_type`, `entity_id`, `action`, `before jsonb`, `after jsonb`, `actor` (user/automation), `origin` (manual/proposal/undo), `proposal_item_id`                                                                                 |
 | `routines` (M6)         | Recurring routines with variants                    | `name`, `anchor` (morning/evening/custom), `active`                                                                                                                                                                                                                         |
@@ -100,23 +102,24 @@ the settings columns of `profiles`. Pipeline bookkeeping (`captures`, `proposal_
 | `inferences` (M7)       | Provisional conclusions, separate from observations | `claim`, `basis_observation_ids uuid[]`, `confidence`, `status` (proposed/accepted/rejected/expired), `expires_at`, `harness_run_id`                                                                                                                                        |
 | `reviews` (M7)          | Saved weekly reviews                                | `period_start`, `period_end`, `body`, `cited_ids uuid[]`                                                                                                                                                                                                                    |
 
-Deliberately absent from v1: projects, money, diet logs, fitness programming, connectors, frontier
-tracking. The model leaves room for them: connectors will be a `links(from, to, relation)` table and
-frontier/floor a `focus_areas` table, added when a milestone needs them.
+Not yet modeled in the current schema: projects, money, diet logs, fitness programming, connectors,
+and frontier tracking. The parity roadmap adds practical domains when their sprint arrives; avoid
+collecting fields before a screen, review, or action needs them.
 
 ## Contracts
 
-`src/contracts/commands.ts` (M1) defines the **domain commands** — the only shapes the mutation
-layer accepts. Proposal kinds are the same union, so an approved proposal maps 1:1 to a command:
+`src/contracts/commands.ts` defines the **domain commands** — the only shapes the mutation layer
+accepts. Proposals use a subset; manual and authorized direct commands can also update an existing
+row without creating an approval card:
 
 ```ts
 type CommandKind =
   | "schedule_block.create" // { title, blockKind, date, start: "HH:MM", end: "HH:MM", fixed }
   | "task.create" // { title, taskKind, dueOn?: "YYYY-MM-DD", notes? }
+  | "task.update" // { taskId, title?, taskKind?, dueOn?, priority?, status?, notes? }
   | "observation.record" // { category, valueText, valueNum?, occurredOn }
   | "schedule_block.update" // M5: { id, patch } — rendered as before/after diff
   | "schedule_block.delete" // M5 (manual only in v1)
-  | "task.update" // M5
   | "routine_run.log"; // M6: { routineId, variant, outcome, onDate }
 
 interface ProposalItem<K extends CommandKind> {
@@ -159,9 +162,11 @@ Internal metaphor; the UI just says "Here's what I'd change."
    duplicates of open tasks → warnings or missing slots.
 7. **Missing slots** — required fields still empty become slots the UI renders as chips/inputs.
    Status is `ready` only when no slots remain.
-8. **Approval** — user approves, edits, or rejects per item (or "approve all ready").
-9. **Mutation** — approved items become commands and run through the mutation layer (below). Today
-   re-renders from the database, not from the proposal.
+8. **Authority and risk** — explicit low-risk commands may execute directly only when the user's
+   setting allows them. Interpretive suggestions, sensitive changes, and high-impact actions remain
+   proposals for confirmation.
+9. **Mutation** — direct commands and confirmed proposals become typed commands and run through the
+   mutation layer (below). Today re-renders from the database, not from an uncommitted proposal.
 
 ## Domain mutation layer
 
@@ -202,7 +207,8 @@ interpret(capture) →
   caps = provider.capabilities(model)
   if caps.toolCalling: loop ≤ 4 rounds of provider.generate(..., tools = allowlist) + read tools
   else:                single call with the snapshot pre-fetched into the prompt
-  final answer must be submit_proposals({ items }) → pipeline steps 3–7
+  final answer is a bounded typed action → authority/risk check → direct allowed mutation or
+    submit_proposals({ items }) for confirmation
   on provider error / 2× invalid output → deterministic parser, provenance.source = "parser"
   persist harness_runs row (always, including failures); payload row only if trace mode = full
 ```
@@ -245,7 +251,7 @@ and a sensitivity tag.
 | `get_schedule`            | read   | ≤ 14-day window                                | M4        |
 | `list_open_tasks`         | read   | ≤ 50 rows, titles + due dates only             | M4        |
 | `get_recent_observations` | read   | ≤ 14 days; only categories the user opted into | M4        |
-| `submit_proposals`        | output | the only way the model returns changes         | M4        |
+| `submit_proposals`        | output | returns changes that need user confirmation    | M4        |
 | `get_recent_routines`     | read   | ≤ 14 days of runs                              | M6        |
 | `search_history`          | read   | ≤ 20 results, cited ids                        | M7        |
 | `propose_inference`       | output | needs ≥ 1 cited observation id                 | M7        |
@@ -377,3 +383,12 @@ The v2.9.7 static build (see `LEGACY.md`) contributed concepts, not code:
 Dropped on purpose: localStorage as the source of truth, 49 version-key migrations, string-HTML
 rendering, free-text-matching decision application, season/day-mode personality taxonomies, and the
 stabilization percentage score.
+
+## Complete workspace candidate
+
+See ADR 0010 and LEGACY_PARITY.md. Supplemental domains use typed life_records; existing tasks,
+schedule and observations stay in their original tables. Workspace operations, imports and manual
+overrides enter runMutations. A per-user advisory transaction lock serializes daily log upserts and
+recurring bill payments. Archived records stay in exports/History and are excluded from operational
+views and bounded AI tools. The `(life)/[room]` route hosts additional rooms. Review uses deterministic
+evidence and user decisions, not model-derived mental-state inferences.
