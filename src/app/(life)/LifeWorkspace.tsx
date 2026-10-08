@@ -1,5 +1,8 @@
 "use client";
 
+import { RoomCard } from "@/components/life/RoomCard";
+import { RoutineRunner } from "@/components/life/RoutineRunner";
+import { roomGroup } from "@/components/shell/nav";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
@@ -255,7 +258,7 @@ function Panel({
   action?: ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6">
+    <section className="space-y-4 rounded-2xl border bg-card p-4 shadow-paper sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">{title}</h2>
         {action}
@@ -510,7 +513,10 @@ export function LifeWorkspace({
         </Panel>
       )}
       {room === "routines" && (
-        <Panel title="Choose the version that fits">
+        <Panel title="Today's routines">
+          <p className="text-sm text-ink-soft">
+            Full, short and minimum all count. Pick the version that fits the day you are having.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             {items(data, "routine")
               .filter((r) => r.data.days.includes(parseISO(date).getDay()))
@@ -601,13 +607,11 @@ export function LifeWorkspace({
     </>
   );
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-room={roomGroup(room)}>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-medium tracking-[.2em] text-muted-foreground uppercase">
-            NOVA · Life Tracker Suite
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+          <p className="eyebrow text-muted-foreground">NOVA · Life Tracker Suite</p>
+          <h1 className="text-3xl">{title}</h1>
           <p className="text-sm text-muted-foreground">
             {content?.description ??
               {
@@ -778,6 +782,36 @@ function RecordCard({
   pending: boolean;
 }) {
   const data = row.data;
+  if (data.type === "routine") {
+    return (
+      <RoomCard
+        eyebrow={data.anchor || "No anchor"}
+        title={data.title}
+        footer={
+          <>
+            <button disabled={pending} className={buttonClass} onClick={() => edit(row)}>
+              Edit
+            </button>
+            <button disabled={pending} className={buttonClass} onClick={() => archive(row)}>
+              Archive
+            </button>
+          </>
+        }
+      >
+        <dl className="space-y-2 text-sm">
+          {(["full", "short", "minimum"] as const).map((version) => (
+            <div key={version} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2">
+              <dt className="font-mono text-xs text-muted-foreground uppercase">{version}</dt>
+              <dd className="break-words">
+                {data[version].length ? data[version].join(" → ") : "No steps yet"}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {data.notes && <p className="text-sm whitespace-pre-wrap text-ink-soft">{data.notes}</p>}
+      </RoomCard>
+    );
+  }
   return (
     <article className="space-y-3 rounded-xl border p-4">
       <div>
@@ -1064,95 +1098,6 @@ function RecordEditor({
           </div>
         </form>
       </section>
-    </div>
-  );
-}
-
-function RoutineRunner({
-  routine,
-  date,
-  logs,
-  save,
-  pending,
-}: {
-  routine: LifeRow & { data: RecordOf<"routine"> };
-  date: string;
-  logs: Array<LifeRow & { data: RecordOf<"routine_run"> }>;
-  save: (record: LifeRecord, id?: string) => void;
-  pending: boolean;
-}) {
-  const [variant, setVariant] = useState<"full" | "short" | "minimum">("full");
-  const [completed, setCompleted] = useState<string[]>([]);
-  const steps = routine.data[variant];
-  const log = logs.find((l) => l.data.routineId === routine.id && l.data.date === date);
-  function submit(outcome: "done" | "partial" | "skipped") {
-    save(
-      {
-        type: "routine_run",
-        title: routine.data.title,
-        notes: "",
-        routineId: routine.id,
-        date,
-        variant,
-        outcome,
-        completedSteps: outcome === "done" ? [...steps] : outcome === "skipped" ? [] : completed,
-      },
-      log?.id,
-    );
-  }
-  return (
-    <div className="space-y-3 rounded-xl border p-4">
-      <h3 className="font-medium">{routine.data.title}</h3>
-      <p className="text-xs text-muted-foreground">
-        {routine.data.anchor || "No anchor"}
-        {log
-          ? ` · Logged ${log.data.variant}: ${log.data.outcome}`
-          : " · Not logged yet; a minimum version is available"}
-      </p>
-      <select
-        aria-label={`${routine.data.title} variant`}
-        className={inputClass}
-        value={variant}
-        onChange={(e) => {
-          setVariant(e.target.value as typeof variant);
-          setCompleted([]);
-        }}
-      >
-        {["full", "short", "minimum"].map((v) => (
-          <option key={v}>{v}</option>
-        ))}
-      </select>
-      <div className="space-y-2">
-        {steps.map((step, i) => (
-          <label className="flex items-start gap-2 text-sm" key={`${step}-${i}`}>
-            <input
-              type="checkbox"
-              checked={completed.includes(step)}
-              onChange={(e) =>
-                setCompleted(
-                  e.target.checked ? [...completed, step] : completed.filter((s) => s !== step),
-                )
-              }
-            />
-            {step}
-          </label>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <button className={primaryClass} disabled={pending} onClick={() => submit("done")}>
-          Complete {variant}
-        </button>
-        <button
-          className={buttonClass}
-          disabled={pending || !completed.length}
-          onClick={() => submit("partial")}
-        >
-          Save partial
-        </button>
-        <button className={buttonClass} disabled={pending} onClick={() => submit("skipped")}>
-          Skip intentionally
-        </button>
-      </div>
     </div>
   );
 }
