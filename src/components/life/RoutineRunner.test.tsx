@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import type { LifeRecord, LifeRow, RecordOf } from "@/contracts/life";
+import type { LifeRow, RecordOf } from "@/contracts/life";
 
 import { closingLine, RoutineRunner } from "./RoutineRunner";
 
@@ -31,7 +31,7 @@ function render(logs: Array<LifeRow & { data: RecordOf<"routine_run"> }> = []) {
       routine={routine}
       date="2026-10-08"
       logs={logs}
-      save={(_: LifeRecord) => {}}
+      save={() => {}}
       pending={false}
     />,
   );
